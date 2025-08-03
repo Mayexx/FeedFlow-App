@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">FeedFlow</string>
+
+    <string-array name="user_roles">
+        <item>Fish Farmer</item>
+        <item>Fish Feeder</item>
+    </string-array>
+    <string-array name="device_list">
+        <item>Fish Cage 1</item>
+        <item>Fish Cage 2</item>
+        <item>Fish Cage 3</item>
+    </string-array>
+
 </resources>

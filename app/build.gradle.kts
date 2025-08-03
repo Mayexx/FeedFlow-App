@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.feedflow"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.feedflow"

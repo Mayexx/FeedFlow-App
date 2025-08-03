@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background">
+
+    <LinearLayout
+        android:id="@+id/loginContainer"
+        android:layout_width="358dp"
+        android:layout_height="598dp"
+        android:layout_margin="24dp"
+        android:clipToPadding="false"
+        android:elevation="6dp"
+        android:orientation="vertical"
+        android:padding="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.34"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.564">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="wrap_content"
+            android:layout_height="135dp"
+            android:layout_gravity="center"
+            app:srcCompat="@drawable/logo"
+            tools:layout_editor_absoluteX="146dp"
+            tools:layout_editor_absoluteY="184dp" />
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/signUpTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/poppins_bold"
+            android:gravity="center"
+            android:text="Create an Account"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!-- Number Input -->
+        <EditText
+            android:id="@+id/numberInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Number"
+            android:inputType="number"
+            android:background="@drawable/edittext_bg"
+            android:padding="12dp"
+            android:fontFamily="@font/poppins_regular"
+            android:textSize="14sp"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Password Input -->
+        <EditText
+            android:id="@+id/passwordInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Password"
+            android:fontFamily="@font/poppins_regular"
+            android:textSize="14sp"
+            android:inputType="textPassword"
+            android:padding="12dp" />
+
+        <!-- Confirm Password Input -->
+        <EditText
+            android:id="@+id/confirmPasswordInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="Confirm Password"
+            android:fontFamily="@font/poppins_regular"
+            android:textSize="14sp"
+            android:inputType="textPassword"
+            android:padding="12dp" />
+
+        <!-- Terms and Conditions -->
+        <CheckBox
+            android:id="@+id/termsCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="1dp"
+            android:fontFamily="@font/poppins_regular"
+            android:text="I agree to the Terms and Conditions"
+            android:textSize="12sp" />
+
+        <!-- Sign Up Button -->
+        <Button
+            android:id="@+id/signUpButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:backgroundTint="#4894FE"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Sign Up"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/loginRedirect"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_regular"
+            android:gravity="center"
+            android:text="Already have an account? Log in"
+            android:textColor="#2979FF"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
