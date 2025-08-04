@@ -49,12 +49,14 @@
             android:id="@+id/numberInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Number"
-            android:inputType="number"
+            android:hint="Mobile number"
+            android:inputType="phone"
+            android:maxLength="13"
+            android:digits="+0123456789"
             android:background="@drawable/edittext_bg"
             android:padding="12dp"
-            android:fontFamily="@font/poppins_regular"
             android:textSize="14sp"
+            android:fontFamily="@font/poppins_regular"
             android:layout_marginBottom="12dp" />
 
         <!-- Password -->

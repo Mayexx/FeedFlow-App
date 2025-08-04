@@ -39,11 +39,16 @@ public class LoginActivity extends AppCompatActivity {
             String number = numberInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
+            // Regex: starts with 09 and followed by 9 digits or +639 and 9 digits
+            String phRegex = "^(09\\d{9}|\\+639\\d{9})$";
+
             if (number.isEmpty() || password.isEmpty()) {
                 Toast.makeText(LoginActivity.this, "Please enter both number and password.", Toast.LENGTH_SHORT).show();
+            } else if (!number.matches(phRegex)) {
+                Toast.makeText(LoginActivity.this, "Enter a valid number (e.g., 09171234567 or +639171234567)", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
-                 startActivity(new Intent(LoginActivity.this, BluetoothSetUpActivity.class));
+                startActivity(new Intent(LoginActivity.this, BluetoothSetUpActivity.class));
             }
         });
 
