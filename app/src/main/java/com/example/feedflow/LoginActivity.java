@@ -47,7 +47,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // Highlight and make "Sign up" clickable
         SpannableString spannable = new SpannableString("Don’t have an account? Sign up");
         ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
