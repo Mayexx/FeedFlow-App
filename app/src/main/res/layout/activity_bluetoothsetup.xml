@@ -57,7 +57,7 @@
 
             <!-- Button -->
             <Button
-                android:id="@+id/btnSetup"
+                android:id="@+id/buttonSetup"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:backgroundTint="#4A90E2"
