@@ -62,7 +62,7 @@
             android:id="@+id/passwordInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/edittext_bg"
             android:hint="Password"
             android:fontFamily="@font/poppins_regular"

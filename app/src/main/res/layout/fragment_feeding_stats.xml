@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F0F2F5"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FeedFlow"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fish Cage 1"
+            android:textSize="18sp"
+            android:textColor="#555555" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Last Updated: Just now"
+            android:textSize="14sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Feeding Overview -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Feeding Overview"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:textColor="#000000" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Today: 25 kg"
+            android:textSize="16sp"
+            android:textColor="#333333"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Feed Level: 30%"
+            android:textSize="16sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Weekly Feeding -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Weekly Feeding"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_marginBottom="8dp" />
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:padding="16dp"
+            android:alignmentMode="alignMargins"
+            android:rowOrderPreserved="false">
+
+            <TextView android:text="Monday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="2.0 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Tuesday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="2.0 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Wednesday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="1.9 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Thursday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="2.2 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Friday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="2.2 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Saturday" android:textStyle="bold" android:layout_margin="8dp" />
+            <TextView android:text="1.8 kg" android:layout_margin="8dp" />
+
+            <TextView android:text="Sunday" android:textStyle="bold" android:textColor="#FF9800" android:layout_margin="8dp" />
+            <TextView android:text="2.2 kg" android:textStyle="bold" android:textColor="#FF9800" android:layout_margin="8dp" />
+        </GridLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Average Daily Feed: 2.0 kg"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Feed Efficiency: 1.2 FCR"
+            android:layout_marginBottom="16dp" />
+    </LinearLayout>
+</ScrollView>

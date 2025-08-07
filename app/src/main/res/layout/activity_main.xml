@@ -21,6 +21,4 @@
         app:layout_constraintVertical_bias="0.431"
         app:tint="#0C1E46"
         tools:ignore="MissingConstraints" />
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
