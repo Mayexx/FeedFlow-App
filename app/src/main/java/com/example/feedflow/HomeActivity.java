@@ -46,11 +46,13 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+
         initViews();
         initBluetooth();
         restoreSavedData();
         setupButtons();
-        setupBottomNavigation();
+        setupBottomNavigation(bottomNav);
     }
 
     private void initViews() {
@@ -103,17 +105,42 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void setupBottomNavigation() {
+    private void setupBottomNavigation(BottomNavigationView bottomNav) {
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
+        bottomNavigation.setSelectedItemId(R.id.nav_home); // highlight Home tab
+
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_stats) {
+
+            if (id == R.id.nav_home) {
+                return true; // already in Home
+            } else if (id == R.id.nav_stats) {
                 startActivity(new Intent(HomeActivity.this, StatsActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_notes) {
+                startActivity(new Intent(HomeActivity.this, NotesActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_alerts) {
+                startActivity(new Intent(HomeActivity.this, AlertsActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
+                overridePendingTransition(0,0);
+                finish();
                 return true;
             }
             return false;
         });
     }
+
+
+
 
     private void initBluetooth() {
         btAdapter = BluetoothAdapter.getDefaultAdapter();
