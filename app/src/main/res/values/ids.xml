@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="alertsContainer" type="id" />
+    <item name="switchMarkAll" type="id" />
+    <item name="appTitle" type="id" />
+    <item name="cageTitle" type="id" />
+    <item name="lastUpdated" type="id" />
+    <item name="gridWeeklyFeed" type="id" />
+</resources>

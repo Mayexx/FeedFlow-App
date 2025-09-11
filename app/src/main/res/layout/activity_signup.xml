@@ -7,6 +7,171 @@
     android:layout_height="match_parent"
     android:background="@drawable/background">
 
+    <View
+        android:id="@+id/bubble13"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="368dp"
+        android:layout_marginTop="116dp"
+        android:background="@drawable/bubble_shiny"
+        android:animation="@anim/bubble_float"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble11"
+        android:layout_width="61dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="236dp"
+        android:layout_marginEnd="12dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble10"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="92dp"
+        android:layout_marginTop="168dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble9"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="336dp"
+        android:layout_marginTop="148dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble6"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="236dp"
+        android:animation="@anim/bubble_float"
+        android:layout_marginEnd="340dp"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble7"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="320dp"
+        android:layout_marginTop="108dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:animation="@anim/bubble_float"
+        android:layout_marginStart="48dp"
+        android:layout_marginTop="184dp"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble_top_right"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:animation="@anim/bubble_float"
+        android:layout_marginTop="180dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble1"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="144dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble2"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="200dp"
+        android:animation="@anim/bubble_float"
+        android:layout_marginEnd="68dp"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble3"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="92dp"
+        android:layout_marginTop="220dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble4"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="376dp"
+        android:layout_marginTop="76dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble12"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="68dp"
+        android:layout_marginTop="116dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble8"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="356dp"
+        android:layout_marginTop="92dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/bubble5"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="148dp"
+        android:animation="@anim/bubble_float"
+        android:background="@drawable/bubble_shiny"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/loginContainer"
         android:layout_width="358dp"

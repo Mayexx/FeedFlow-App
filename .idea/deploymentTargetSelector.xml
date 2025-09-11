@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-08-08T01:24:47.031267700Z">
+        <DropdownSelection timestamp="2025-08-10T03:20:14.264299500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\My PC\.android\avd\DELA_CRUZ_AVD.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\My PC\.android\avd\Copy_of_DELA_CRUZ_AVD.avd" />
             </handle>
           </Target>
         </DropdownSelection>

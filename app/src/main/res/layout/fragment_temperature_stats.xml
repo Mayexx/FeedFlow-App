@@ -1,116 +1,158 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#F0F2F5"
     android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:dividerPadding="12dp">
 
-        <!-- Header -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="FeedFlow"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Fish Cage 1"
-            android:textSize="18sp"
-            android:textColor="#555555" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Last Updated: Just now"
-            android:textSize="14sp"
-            android:textColor="#888888"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Tabs -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/statsTabLayout"
+        <!-- Temperature Overview Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#FFFFFF"
-            app:tabIndicatorColor="#4894FE"
-            app:tabSelectedTextColor="#4894FE"
-            app:tabTextColor="#000000" />
+            card_view:cardCornerRadius="0dp"
+            card_view:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
 
-        <!-- Temperature Overview -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Temperature Overview"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:textColor="#000000" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Current: 27.9°C"
-            android:textSize="16sp"
-            android:textColor="#333333"
-            android:layout_marginTop="8dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Temperature Overview"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:fontFamily="@font/poppins_regular" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Average: 26.8°C"
-            android:textSize="16sp"
-            android:textColor="#333333"
-            android:layout_marginBottom="16dp" />
+                <TextView
+                    android:id="@+id/tvLastUpdated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Last Updated: "
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="12dp"/>
 
-        <!-- Temperature Trends -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Temperature Trends"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp" />
+                <TextView
+                    android:id="@+id/tvTempCurrent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Current: "
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/poppins_regular" />
 
-        <!-- Placeholder for graph -->
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:src="@drawable/temp_graph_placeholder"
-            android:scaleType="fitCenter"
-            android:layout_marginBottom="16dp" />
+                <TextView
+                    android:id="@+id/tvTempAverage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Average: "
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginTop="6dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-        <!-- Temperature Statistics -->
-        <TextView
+        <!-- Temperature Trends Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Temperature Statistics"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp" />
+            android:layout_height="wrap_content"
+            card_view:cardCornerRadius="0dp"
+            card_view:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
 
-        <TextView
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sea Water Temperature Trends"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Placeholder for trend graph -->
+                <ImageView
+                    android:id="@+id/ivTempGraph"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:background="#E8EEF5"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Temperature graph"
+                    android:src="@drawable/temp_graph_placeholder" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Temperature Stats Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Time in optimal range: 92%" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Time below optimal: 5%" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="Time above optimal: 3%" />
+            android:layout_height="wrap_content"
+            card_view:cardCornerRadius="0dp"
+            card_view:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Temperature Statistics"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#000000"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/tvOptimalTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Time in optimal range: "
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_regular" />
+
+                <TextView
+                    android:id="@+id/tvBelowOptimal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Time below optimal: "
+                    android:textSize="16sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/poppins_regular" />
+
+                <TextView
+                    android:id="@+id/tvAboveOptimal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Time above optimal: "
+                    android:textSize="16sp"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
     </LinearLayout>
 </ScrollView>

@@ -34,7 +34,7 @@ android {
     }
 
     buildFeatures {
-        viewBinding = true // optional but recommended
+        viewBinding = true
     }
 }
 

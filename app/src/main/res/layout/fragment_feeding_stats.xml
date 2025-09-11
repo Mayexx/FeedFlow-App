@@ -2,115 +2,205 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F2F5"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="#F9F9F9"
     android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:spacing="16dp">
 
-        <!-- Header -->
-        <TextView
+        <!-- Summary Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="FeedFlow"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="0dp">
 
-        <TextView
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvLastUpdated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Last Updated: --"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textColor="#777777" />
+
+                <TextView
+                    android:id="@+id/tvTodayFeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Today: -- kg"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#000000" />
+
+                <TextView
+                    android:id="@+id/tvFeedLevel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Feed Level: --%"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#333333" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Weekly Summary Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Fish Cage 1"
-            android:textSize="18sp"
-            android:textColor="#555555" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="0dp">
 
-        <TextView
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Weekly Feeding Summary"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="#000000" />
+
+                <GridLayout
+                    android:id="@+id/gridWeeklyFeed"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:columnCount="7"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp"
+                    android:rowCount="1"
+                    android:useDefaultMargins="true"
+                    android:alignmentMode="alignMargins">
+
+                    <!-- Example placeholders (will be filled dynamically) -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Mon\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Tue\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Wed\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Thu\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Fri\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Sat\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_columnWeight="1"
+                        android:text="Sun\n--kg"
+                        android:fontFamily="@font/poppins_regular"
+                        android:gravity="center"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+                </GridLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Stats Card -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Last Updated: Just now"
-            android:textSize="14sp"
-            android:textColor="#888888"
-            android:layout_marginBottom="16dp" />
+            app:cardCornerRadius="0dp"
+            app:cardElevation="0dp">
 
-        <!-- Feeding Overview -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Feeding Overview"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:textColor="#000000" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Today: 25 kg"
-            android:textSize="16sp"
-            android:textColor="#333333"
-            android:layout_marginTop="8dp" />
+                <TextView
+                    android:id="@+id/tvAverageFeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="Average Daily Feed: -- kg"
+                    android:textSize="16sp"
+                    android:textColor="#333333" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Feed Level: 30%"
-            android:textSize="16sp"
-            android:textColor="#333333"
-            android:layout_marginBottom="16dp" />
+                <TextView
+                    android:id="@+id/tvFeedEfficiency"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Feed Efficiency: -- FCR"
+                    android:fontFamily="@font/poppins_regular"
+                    android:textSize="16sp"
+                    android:textColor="#333333"
+                    android:layout_marginTop="4dp"/>
 
-        <!-- Weekly Feeding -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Weekly Feeding"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-        <GridLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="2"
-            android:padding="16dp"
-            android:alignmentMode="alignMargins"
-            android:rowOrderPreserved="false">
-
-            <TextView android:text="Monday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="2.0 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Tuesday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="2.0 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Wednesday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="1.9 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Thursday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="2.2 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Friday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="2.2 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Saturday" android:textStyle="bold" android:layout_margin="8dp" />
-            <TextView android:text="1.8 kg" android:layout_margin="8dp" />
-
-            <TextView android:text="Sunday" android:textStyle="bold" android:textColor="#FF9800" android:layout_margin="8dp" />
-            <TextView android:text="2.2 kg" android:textStyle="bold" android:textColor="#FF9800" android:layout_margin="8dp" />
-        </GridLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Average Daily Feed: 2.0 kg"
-            android:layout_marginTop="8dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Feed Efficiency: 1.2 FCR"
-            android:layout_marginBottom="16dp" />
     </LinearLayout>
 </ScrollView>

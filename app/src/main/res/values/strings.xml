@@ -10,5 +10,26 @@
         <item>Fish Cage 2</item>
         <item>Fish Cage 3</item>
     </string-array>
+    <string-array name="weather_array">
+        <item>Weather</item>
+        <item>Sunny</item>
+        <item>Rainy</item>
+        <item>Cloudy</item>
+    </string-array>
+
+    <string-array name="feeding_array">
+        <item>Feeding Time</item>
+        <item>Morning</item>
+        <item>Afternoon</item>
+        <item>Evening</item>
+    </string-array>
+
+    <string-array name="behaviour_array">
+        <item>Behaviour</item>
+        <item>Normal</item>
+        <item>Aggressive</item>
+        <item>Lethargic</item>
+    </string-array>
+
 
 </resources>

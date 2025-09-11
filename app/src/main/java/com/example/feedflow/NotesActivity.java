@@ -1,112 +1,127 @@
 package com.example.feedflow;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
-import android.widget.TextView;
+import android.widget.ArrayAdapter;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import org.json.JSONArray;
+
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class NotesActivity extends AppCompatActivity {
 
-    private EditText editTextDeadFish, editTextTemp, editTextAmount, editTextNotes;
-    private Spinner spinnerWeather, spinnerFeedingTime, spinnerFeedType, spinnerBehaviour;
-    private LinearLayout savedNotesContainer;
-    private SharedPreferences sharedPreferences;
-
     private static final String PREFS_NAME = "FeedFlowNotes";
     private static final String NOTES_KEY = "saved_notes";
+
+    private EditText editTextDeadFish, editTextTemp, editTextAmount, editTextNotes;
+    private Spinner spinnerWeather, spinnerFeedingTime, spinnerBehaviour;
+    private Button btnRecord;
+    private RecyclerView recyclerViewNotes;
+
+    private NotesAdapter notesAdapter;
+    private List<String> notesList;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes);
 
+
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+        // Init SharedPreferences
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        // Load saved notes from JSON
+        notesList = loadNotes();
 
-        // Initialize UI
+        // Init UI components
         editTextDeadFish = findViewById(R.id.editTextDeadFish);
         editTextTemp = findViewById(R.id.editTextTemp);
         editTextAmount = findViewById(R.id.editTextAmount);
         editTextNotes = findViewById(R.id.editTextNotes);
-
         spinnerWeather = findViewById(R.id.spinnerWeather);
         spinnerFeedingTime = findViewById(R.id.spinnerFeedingTime);
-        spinnerFeedType = findViewById(R.id.spinnerFeedType);
         spinnerBehaviour = findViewById(R.id.spinnerBehaviour);
+        btnRecord = findViewById(R.id.btnRecord);
+        recyclerViewNotes = findViewById(R.id.recyclerViewNotes);
 
-        savedNotesContainer = findViewById(R.id.savedNotesContainer); // ✅ FIX: initialize container
-
-        Button btnRecord = findViewById(R.id.btnRecord);
-
-        // Populate Spinners
+        // Setup Spinners
         setupSpinners();
 
-        // Load previously saved notes
-        loadSavedNotes();
+        // Setup RecyclerView
+        notesAdapter = new NotesAdapter(this, notesList);
+        recyclerViewNotes.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewNotes.setAdapter(notesAdapter);
 
-        // Save note when button clicked
+        // Handle Record button
         btnRecord.setOnClickListener(v -> saveNote());
 
-        // Setup bottom navigation
         setupBottomNavigation(bottomNav);
     }
 
     private void setupSpinners() {
-        ArrayAdapter<String> weatherAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Select", "Sunny", "Rainy", "Cloudy"});
+        // Weather
+        ArrayAdapter<CharSequence> weatherAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.weather_array,
+                android.R.layout.simple_spinner_dropdown_item
+        );
         spinnerWeather.setAdapter(weatherAdapter);
 
-        ArrayAdapter<String> feedingAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Select", "Morning", "Afternoon", "Evening"});
+        // Feeding time
+        ArrayAdapter<CharSequence> feedingAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.feeding_array,
+                android.R.layout.simple_spinner_dropdown_item
+        );
         spinnerFeedingTime.setAdapter(feedingAdapter);
 
-        ArrayAdapter<String> feedTypeAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Select", "Pellets", "Flakes", "Live Food"});
-        spinnerFeedType.setAdapter(feedTypeAdapter);
-
-        ArrayAdapter<String> behaviourAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"Select", "Normal", "Aggressive", "Lethargic"});
+        // Behaviour
+        ArrayAdapter<CharSequence> behaviourAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.behaviour_array,
+                android.R.layout.simple_spinner_dropdown_item
+        );
         spinnerBehaviour.setAdapter(behaviourAdapter);
     }
 
     private void saveNote() {
-        String note = "Dead Fish: " + editTextDeadFish.getText().toString() +
-                "\nTemp: " + editTextTemp.getText().toString() + "°C" +
-                "\nWeather: " + spinnerWeather.getSelectedItem().toString() +
-                "\nFeeding Time: " + spinnerFeedingTime.getSelectedItem().toString() +
-                "\nFeed Type: " + spinnerFeedType.getSelectedItem().toString() +
-                "\nAmount: " + editTextAmount.getText().toString() + " kg" +
-                "\nBehaviour: " + spinnerBehaviour.getSelectedItem().toString() +
-                "\nNotes: " + editTextNotes.getText().toString();
+        String deadFish = editTextDeadFish.getText().toString().trim();
+        String temp = editTextTemp.getText().toString().trim();
+        String amount = editTextAmount.getText().toString().trim();
+        String notes = editTextNotes.getText().toString().trim();
+        String weather = spinnerWeather.getSelectedItem().toString();
+        String feedingTime = spinnerFeedingTime.getSelectedItem().toString();
+        String behaviour = spinnerBehaviour.getSelectedItem().toString();
 
-        Set<String> notesSet = sharedPreferences.getStringSet(NOTES_KEY, new HashSet<>());
-        Set<String> updatedSet = new HashSet<>(notesSet);
-        updatedSet.add(note);
+        // Build note string
+        String record = "Dead Fish: " + deadFish +
+                ", Temp: " + temp + "°C" +
+                ", Weather: " + weather +
+                ", Feeding: " + feedingTime +
+                ", Amount: " + amount + "kg" +
+                ", Behaviour: " + behaviour +
+                (notes.isEmpty() ? "" : ", Notes: " + notes);
 
-        sharedPreferences.edit().putStringSet(NOTES_KEY, updatedSet).apply();
+        // Add to list + adapter
+        notesList.add(record);
+        notesAdapter.notifyItemInserted(notesList.size() - 1);
 
-        // Refresh displayed notes
-        loadSavedNotes();
+        // Save list as JSON string
+        saveNotes(notesList);
 
         // Clear inputs
         editTextDeadFish.setText("");
@@ -115,27 +130,33 @@ public class NotesActivity extends AppCompatActivity {
         editTextNotes.setText("");
         spinnerWeather.setSelection(0);
         spinnerFeedingTime.setSelection(0);
-        spinnerFeedType.setSelection(0);
         spinnerBehaviour.setSelection(0);
     }
 
-    private void loadSavedNotes() {
-        savedNotesContainer.removeAllViews();
-        Set<String> notesSet = sharedPreferences.getStringSet(NOTES_KEY, new HashSet<>());
-        List<String> notesList = new ArrayList<>(notesSet);
+    private void saveNotes(List<String> list) {
+        JSONArray jsonArray = new JSONArray(list);
+        sharedPreferences.edit().putString(NOTES_KEY, jsonArray.toString()).apply();
+    }
 
-        for (String note : notesList) {
-            TextView noteView = new TextView(this);
-            noteView.setText(note);
-            noteView.setPadding(16, 16, 16, 16);
-            noteView.setBackgroundResource(android.R.drawable.editbox_background_normal);
-            savedNotesContainer.addView(noteView);
+    private List<String> loadNotes() {
+        List<String> list = new ArrayList<>();
+        try {
+            String json = sharedPreferences.getString(NOTES_KEY, null);
+            if (json != null && !json.isEmpty()) {
+                JSONArray jsonArray = new JSONArray(json);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    list.add(jsonArray.getString(i));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return list;
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
         BottomNavigationView bottomNavigation = findViewById(R.id.bottomNavigation);
-        bottomNavigation.setSelectedItemId(R.id.nav_notes); // highlight Notes tab
+        bottomNavigation.setSelectedItemId(R.id.nav_notes);
 
         bottomNavigation.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -149,9 +170,8 @@ public class NotesActivity extends AppCompatActivity {
                 startActivity(new Intent(NotesActivity.this, StatsActivity.class));
                 overridePendingTransition(0,0);
                 finish();
-                return true;
             } else if (id == R.id.nav_notes) {
-                return true; // already in Notes
+                return true;
             } else if (id == R.id.nav_alerts) {
                 startActivity(new Intent(NotesActivity.this, AlertsActivity.class));
                 overridePendingTransition(0,0);
@@ -166,7 +186,4 @@ public class NotesActivity extends AppCompatActivity {
             return false;
         });
     }
-
-
-
 }

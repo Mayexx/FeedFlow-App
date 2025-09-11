@@ -20,6 +20,32 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#4894FE"
+                android:padding="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="FeedFlow"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:fontFamily="@font/poppins_bold" />
+
+                <TextView
+                    android:id="@+id/txtDeviceName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No Device Connected"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/poppins_regular" />
+            </LinearLayout>
+
+
             <!-- Input Section -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -29,7 +55,6 @@
                 android:background="#D9D9D9"
                 android:layout_marginBottom="16dp"
                 android:layout_marginTop="8dp"
-                android:backgroundTint="#D9D9D9"
                 android:elevation="4dp"
                 android:clipToOutline="true">
 
@@ -69,20 +94,26 @@
 
                     <Spinner
                         android:id="@+id/spinnerWeather"
+                        android:entries="@array/weather_array"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:background="@drawable/spinner_bg"
+                        android:textSize="10sp"
+                        android:fontFamily="@font/poppins_regular"
                         android:padding="12dp" />
 
                     <Spinner
                         android:id="@+id/spinnerFeedingTime"
+                        android:entries="@array/feeding_array"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="8dp"
+                        android:fontFamily="@font/poppins_regular"
                         android:background="@drawable/spinner_bg"
-                        android:padding="12dp" />
+                        android:padding="12dp"
+                        android:textSize="10sp" />
                 </LinearLayout>
 
                 <!-- Feed Type & Amount -->
@@ -94,12 +125,17 @@
                     android:layout_marginBottom="8dp">
 
                     <Spinner
-                        android:id="@+id/spinnerFeedType"
+                        android:id="@+id/spinnerBehaviour"
+                        android:entries="@array/behaviour_array"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:layout_height="wrap_content"
                         android:background="@drawable/spinner_bg"
-                        android:padding="12dp" />
+                        android:padding="12dp"
+                        android:textSize="10sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_marginBottom="8dp" />
+
 
                     <EditText
                         android:id="@+id/editTextAmount"
@@ -114,15 +150,6 @@
                         android:background="@drawable/edittext_bg"
                         android:padding="12dp" />
                 </LinearLayout>
-
-                <!-- Fish Behaviour -->
-                <Spinner
-                    android:id="@+id/spinnerBehaviour"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/spinner_bg"
-                    android:padding="12dp"
-                    android:layout_marginBottom="8dp" />
 
                 <!-- Notes -->
                 <EditText
@@ -166,15 +193,16 @@
                     android:text="All saved Notes"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    android:textColor="#666666"
+                    android:textColor="#333333"
                     android:layout_marginBottom="8dp" />
 
-                <LinearLayout
-                    android:id="@+id/savedNotesContainer"
+                <!-- RecyclerView for saved notes -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewNotes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingTop="8dp"/>
+                    android:overScrollMode="never"
+                    android:nestedScrollingEnabled="false"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

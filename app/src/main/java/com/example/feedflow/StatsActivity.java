@@ -28,24 +28,24 @@ public class StatsActivity extends AppCompatActivity {
         viewPager = findViewById(R.id.viewPager);
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
 
-        // Set up ViewPager and Tabs
+        // ViewPager + Tabs
         pagerAdapter = new StatsPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
 
         tabLayout.addTab(tabLayout.newTab().setText("Temperature"));
         tabLayout.addTab(tabLayout.newTab().setText("Feeding"));
 
-        // Link tab selection with ViewPager
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 viewPager.setCurrentItem(tab.getPosition());
             }
-
-            public void onTabUnselected(TabLayout.Tab tab) {}
-            public void onTabReselected(TabLayout.Tab tab) {}
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}
+            @Override public void onTabReselected(TabLayout.Tab tab) {}
         });
 
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
             public void onPageSelected(int position) {
                 tabLayout.selectTab(tabLayout.getTabAt(position));
             }
@@ -69,7 +69,6 @@ public class StatsActivity extends AppCompatActivity {
                 tabTextView.setTextColor(Color.BLACK);
                 tabTextView.setGravity(android.view.Gravity.CENTER);
 
-                // Add content description for accessibility
                 tabTextView.setContentDescription(tabText);
                 tab.setCustomView(tabTextView);
             }
@@ -77,31 +76,34 @@ public class StatsActivity extends AppCompatActivity {
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
-        bottomNav.setSelectedItemId(R.id.nav_stats);
+        bottomNav.setSelectedItemId(R.id.nav_stats); // highlight current tab
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
                 startActivity(new Intent(this, HomeActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(0,0);
+                finish();
                 return true;
             } else if (id == R.id.nav_stats) {
-                return true; // Already here
+                return true; // already here
             } else if (id == R.id.nav_notes) {
                 startActivity(new Intent(this, NotesActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(0,0);
+                finish();
                 return true;
             } else if (id == R.id.nav_alerts) {
                 startActivity(new Intent(this, AlertsActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(0,0);
+                finish();
                 return true;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));
-                overridePendingTransition(0, 0);
+                overridePendingTransition(0,0);
+                finish();
                 return true;
             }
-
             return false;
         });
     }

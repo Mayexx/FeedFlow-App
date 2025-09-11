@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:interpolator="@android:anim/accelerate_decelerate_interpolator">
+
+    <!-- Vertical float -->
+    <translate
+        android:fromYDelta="-10"
+        android:toYDelta="10"
+        android:duration="3000"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse" />
+
+    <!-- Slight horizontal drift -->
+    <translate
+        android:fromXDelta="-5"
+        android:toXDelta="5"
+        android:duration="4000"
+        android:repeatCount="infinite"
+        android:repeatMode="reverse" />
+</set>

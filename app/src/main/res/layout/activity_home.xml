@@ -40,9 +40,10 @@
                     android:fontFamily="@font/poppins_bold" />
 
                 <TextView
+                    android:id="@+id/txtDeviceName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Fish Cage 1\nLast Updated: Just now"
+                    android:text="No Device Connected"
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_regular" />
@@ -66,16 +67,19 @@
                     android:background="@drawable/card_bg">
 
                     <TextView
-                        android:text="Temperature"
+                        android:text="Water Temperature"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
+
                     <TextView
                         android:id="@+id/txtTemperature"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="27.9°C"
                         android:textStyle="bold"/>
+
                     <TextView
+                        android:id="@+id/txtWaterTempStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Optimal"
@@ -95,16 +99,20 @@
                         android:text="Feed Level"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
+
                     <TextView
                         android:id="@+id/txtFeedLevel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="30%"
                         android:textStyle="bold"/>
+
                     <TextView
+                        android:id="@+id/txtFeedLevelStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Refill Soon" android:textColor="#FFA500" />
+                        android:text="Refill Soon"
+                        android:textColor="#FFA500" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -159,7 +167,7 @@
                         android:fontFamily="@font/poppins_bold"/>
                 </LinearLayout>
 
-                <!-- Feed Now and Refill -->
+                <!-- Feed Now -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -174,92 +182,17 @@
                         android:text="Feed Now"
                         android:backgroundTint="#4894FE"
                         android:textColor="#FFFFFF"/>
-
                 </LinearLayout>
-
-                <!-- Next Scheduled -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Next Scheduled Feeding"
-                    android:textSize="12sp"
-                    android:layout_marginTop="12dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Today at 1:00 PM  |  In 3h 40m"
-                    android:textSize="12sp"
-                    android:textColor="#4894FE" />
             </LinearLayout>
 
-            <!-- Scheduled Feedings -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Scheduled Feedings"
-                android:textStyle="bold"
-                android:layout_marginTop="16dp" />
-
+            <!-- Water Temperature Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/card_bg"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Morning Feed\n07:00 AM" />
-
-                    <Switch
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-                </LinearLayout>
-
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="303dp"
-                        android:layout_height="36dp"
-                        android:layout_weight="1"
-                        android:fontFamily="@font/poppins_regular"
-                        android:text="Afternoon Feed\n01:00 PM"
-                        android:textColor="#000000"
-                        android:textSize="14sp" />
-
-                    <Switch
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:checked="true" />
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Add Water Temp / More Sections Here -->
-            <LinearLayout
-                xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:padding="16dp"
-                android:background="@drawable/card_bg">
+                android:background="@drawable/card_bg"
+                android:layout_marginTop="16dp">
 
                 <!-- Header -->
                 <LinearLayout
@@ -278,117 +211,61 @@
                         android:layout_height="wrap_content"/>
 
                     <TextView
-                        android:text="Real-time"
+                        android:id="@+id/Temperature"
+                        android:text="27.0 °C"
                         android:textSize="12sp"
                         android:textColor="#999999"
+                        android:layout_marginStart="8dp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
 
                 <!-- Temperature Range Bar -->
+                <SeekBar
+                    android:id="@+id/temperatureSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="365"
+                    android:progress="270"
+                    android:progressDrawable="@drawable/temperature_progress"
+                    android:thumbTint="#2196F3"
+                    android:layout_marginTop="12dp"/>
+
+                <!-- Labels under the SeekBar -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center_horizontal">
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Optimal Range: 25–30°C"
-                        android:textColor="#4CAF50"
+                        android:text="36.5 °C"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/poppins_regular"
+                        android:layout_weight="1"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 °C"
                         android:textSize="12sp"
                         android:fontFamily="@font/poppins_regular"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="History →"
-                        android:textColor="#4894FE"
-                        android:textSize="12sp"
-                        android:layout_marginTop="4dp"/>
                 </LinearLayout>
-
             </LinearLayout>
-
-
-            <!-- Feeding History -->
+            <!-- Feeding History Card -->
             <LinearLayout
+                android:id="@+id/historyContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/card_bg"
                 android:orientation="vertical"
                 android:padding="16dp"
                 android:layout_marginTop="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="12dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Scheduled Feeding\nToday, 09:15 AM"
-                        android:fontFamily="@font/poppins_regular" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="15 kg"
-                        android:fontFamily="@font/poppins_medium" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Scheduled Feeding\nYesterday, 06:00 PM"
-                        android:fontFamily="@font/poppins_regular" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="15 kg"
-                        android:fontFamily="@font/poppins_medium" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Scheduled Feeding\nYesterday, 01:00 PM"
-                        android:fontFamily="@font/poppins_regular" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="15 kg"
-                        android:fontFamily="@font/poppins_medium" />
-                </LinearLayout>
-
             </LinearLayout>
 
         </LinearLayout>
-
     </ScrollView>
 
     <!-- Bottom Navigation -->

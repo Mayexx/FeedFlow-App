@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E9EEF4"
+    tools:context=".SettingsActivity">
+
+    <!-- Content scrolls, nav stays fixed -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="16dp"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Profile Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="14dp"
+                app:cardUseCompatPadding="true"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/imgAvatar"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:src="@drawable/ic_account_circle" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingStart="12dp">
+
+                            <TextView
+                                android:id="@+id/txtUsername"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="John Aqua"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:textColor="#1A1F36" />
+
+                            <TextView
+                                android:id="@+id/inputNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="12sp"
+                                android:textColor="#6B7280" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="#EEF2F7" />
+
+                    <!-- Simple rows -->
+                    <LinearLayout
+                        android:id="@+id/rowEditProfile"
+                        style="@style/SettingsRow"
+                        android:contentDescription="Edit Profile">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_user" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Edit Profile" />
+                        <ImageView
+                            style="@style/RowChevron"
+                            android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/rowChangePassword"
+                        style="@style/SettingsRow"
+                        android:contentDescription="Change Password">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_lock" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Change Password" />
+                        <ImageView
+                            style="@style/RowChevron"
+                            android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/rowPrivacy"
+                        style="@style/SettingsRow"
+                        android:contentDescription="Privacy Settings">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_privacy" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Privacy Settings" />
+                        <ImageView
+                            style="@style/RowChevron"
+                            android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Notification Settings -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="14dp"
+                app:cardUseCompatPadding="true"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Notification Settings"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="#1A1F36"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/rowPush"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_notification" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Push Notifications" />
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchPush"
+                            style="@style/RowSwitch" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/rowSms"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_sms" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="SMS Notifications" />
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchSms"
+                            style="@style/RowSwitch" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/rowAlertPrefs"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_tune" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Alert Preferences" />
+                        <ImageView
+                            style="@style/RowChevron"
+                            android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Data & Storage -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="14dp"
+                app:cardUseCompatPadding="true"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Data and Storage"
+                        android:textStyle="bold"
+                        android:textSize="15sp"
+                        android:textColor="#1A1F36"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/rowExport"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_upload" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Export Data" />
+                        <ImageView
+                            style="@style/RowChevron"
+                            android:src="@drawable/ic_chevron_right" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/rowOffline"
+                        style="@style/SettingsRow">
+                        <ImageView
+                            style="@style/RowIcon"
+                            android:src="@drawable/ic_cloud_off" />
+                        <TextView
+                            style="@style/RowText"
+                            android:text="Offline Mode" />
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchOffline"
+                            style="@style/RowSwitch" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Navigation -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:menu="@menu/bottom_nav_menu" />
+</androidx.constraintlayout.widget.ConstraintLayout>

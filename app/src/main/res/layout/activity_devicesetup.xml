@@ -127,10 +127,7 @@
 
                 android:text="Cancel"
                 android:textColor="#FFFFFF" />
-
-
-        </LinearLayout>
-        </LinearLayout>
+        </LinearLayout></LinearLayout>
 
     </androidx.cardview.widget.CardView>
 

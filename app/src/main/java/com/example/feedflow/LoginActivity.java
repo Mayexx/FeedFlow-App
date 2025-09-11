@@ -1,5 +1,6 @@
 package com.example.feedflow;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,6 +11,8 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.TextPaint;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -19,38 +22,55 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
-    EditText numberInput, passwordInput;
+    EditText usernameInput, passwordInput;
     Button loginButton;
     TextView signUpText;  // <-- Add this
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        Animation bubbleAnim = AnimationUtils.loadAnimation(this, R.anim.bubble_float);
+
+
+        findViewById(R.id.bubble).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble1).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble2).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble3).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble4).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble5).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble6).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble7).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble8).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble9).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble10).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble11).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble12).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble13).startAnimation(bubbleAnim);
+        findViewById(R.id.bubble_top_right).startAnimation(bubbleAnim);
+
         // Initialize views
-        numberInput = findViewById(R.id.numberInput);
+        usernameInput = findViewById(R.id.usernameInput);
         passwordInput = findViewById(R.id.passwordInput);
         loginButton = findViewById(R.id.loginButton);
         signUpText = findViewById(R.id.signUpText);  // <-- Add this
 
         // Handle login button click
         loginButton.setOnClickListener(v -> {
-            String number = numberInput.getText().toString().trim();
+            String username = usernameInput.getText().toString().trim();
             String password = passwordInput.getText().toString().trim();
 
-            // Regex: starts with 09 and followed by 9 digits or +639 and 9 digits
-            String phRegex = "^(09\\d{9}|\\+639\\d{9})$";
-
-            if (number.isEmpty() || password.isEmpty()) {
-                Toast.makeText(LoginActivity.this, "Please enter both number and password.", Toast.LENGTH_SHORT).show();
-            } else if (!number.matches(phRegex)) {
-                Toast.makeText(LoginActivity.this, "Enter a valid number (e.g., 09171234567 or +639171234567)", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(LoginActivity.this, BluetoothSetUpActivity.class));
+            if (username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(LoginActivity.this, "Please enter both username and password.", Toast.LENGTH_SHORT).show();
+                return;
             }
+            // Passed validation
+            Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(LoginActivity.this, BluetoothSetUpActivity.class));
         });
+
 
         SpannableString spannable = new SpannableString("Don’t have an account? Sign up");
         ClickableSpan clickableSpan = new ClickableSpan() {
@@ -70,6 +90,6 @@ public class LoginActivity extends AppCompatActivity {
 
         signUpText.setText(spannable);
         signUpText.setMovementMethod(LinkMovementMethod.getInstance());
-        signUpText.setHighlightColor(Color.TRANSPARENT); // Optional
+        signUpText.setHighlightColor(Color.TRANSPARENT);
     }
 }
