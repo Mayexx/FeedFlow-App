@@ -61,7 +61,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:backgroundTint="#4A90E2"
-                android:fontFamily="@font/poppins_bold"
+                android:fontFamily="@font/poppins_medium"
                 android:text="Set up Device"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"

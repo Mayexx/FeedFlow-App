@@ -17,6 +17,8 @@ import android.view.LayoutInflater;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -43,6 +45,9 @@ public class HomeActivity extends AppCompatActivity {
     private Button btnFeedNow, btnIncrease, btnDecrease, btnAddSchedule;
     private Switch autoSwitch;
     private LinearLayout historyContainer;
+    private ProgressBar progressTemperature;
+    private TextView txtTempThreshold;
+    private int tempThreshold;
 
     private BluetoothAdapter btAdapter;
     private BluetoothSocket btSocket;
@@ -82,12 +87,20 @@ public class HomeActivity extends AppCompatActivity {
         btnDecrease = findViewById(R.id.btnDecrease);
         autoSwitch = findViewById(R.id.autoSwitch);
         historyContainer = findViewById(R.id.historyContainer);
+        progressTemperature = findViewById(R.id.progressTemperature);
+        txtTempThreshold = findViewById(R.id.txtTemperature);
+
     }
 
     private void restoreSavedData() {
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         feedAmount = sharedPreferences.getInt("feedAmount", 25);
         txtFeedAmount.setText(feedAmount + " kg");
+        tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
+        progressTemperature.setProgress(tempThreshold);
+        txtTempThreshold.setText("Temperature: " + tempThreshold + "°C");
+
+
     }
 
     private void saveFeedLog(int amount) {
@@ -306,7 +319,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         };
 
-        // Register ACTION_FOUND intent filter
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
     }
@@ -359,10 +371,19 @@ public class HomeActivity extends AppCompatActivity {
                         String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
                         handler.post(() -> {
+                            // Update UI
                             txtTemperature.setText(temp + "°C");
                             txtFeedLevel.setText(feed + "%");
                             txtDeviceName.setText(connectedDeviceName + "\nLast Updated: " + time);
 
+                            try {
+                                int currentTemp = Integer.parseInt(temp);
+                                progressTemperature.setProgress(currentTemp);
+                            } catch (NumberFormatException e) {
+                                Log.e("BT_DATA", "Invalid temperature format: " + temp);
+                            }
+
+                            // Save latest values
                             SharedPreferences.Editor editor = sharedPreferences.edit();
                             editor.putString("latestTemperature", temp);
                             editor.putString("latestFeedLevel", feed);
@@ -376,4 +397,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         }
     }
+
+
 }

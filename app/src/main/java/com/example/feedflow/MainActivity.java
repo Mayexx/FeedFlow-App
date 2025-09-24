@@ -18,16 +18,18 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Handle system bars padding
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        View mainView = findViewById(R.id.main);
-        mainView.setOnClickListener(v -> {
+        // Tap anywhere to go to GetStartedActivity
+        findViewById(R.id.main).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, GetStartedActivity.class);
             startActivity(intent);
+            finish();
         });
     }
 }

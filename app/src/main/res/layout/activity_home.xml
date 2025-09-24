@@ -221,15 +221,13 @@
                 </LinearLayout>
 
                 <!-- Temperature Range Bar -->
-                <SeekBar
-                    android:id="@+id/temperatureSeekBar"
+                <ProgressBar
+                    android:id="@+id/progressTemperature"
+                    style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:max="365"
-                    android:progress="270"
-                    android:progressDrawable="@drawable/temperature_progress"
-                    android:thumbTint="#2196F3"
-                    android:layout_marginTop="12dp"/>
+                    android:max="50"
+                    android:progress="28" />
 
                 <!-- Labels under the SeekBar -->
                 <LinearLayout

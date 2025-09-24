@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
- // Add this if using version catalogs
+    alias(libs.plugins.google.gms.google.services)
+    // Add this if using version catalogs
     // or: id("com.google.gms.google-services")
 }
 

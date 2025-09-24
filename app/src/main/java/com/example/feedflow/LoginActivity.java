@@ -11,8 +11,6 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.TextPaint;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -24,7 +22,7 @@ public class LoginActivity extends AppCompatActivity {
 
     EditText usernameInput, passwordInput;
     Button loginButton;
-    TextView signUpText;  // <-- Add this
+    TextView signUpText;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -32,30 +30,11 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        Animation bubbleAnim = AnimationUtils.loadAnimation(this, R.anim.bubble_float);
-
-
-        findViewById(R.id.bubble).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble1).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble2).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble3).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble4).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble5).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble6).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble7).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble8).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble9).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble10).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble11).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble12).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble13).startAnimation(bubbleAnim);
-        findViewById(R.id.bubble_top_right).startAnimation(bubbleAnim);
-
         // Initialize views
         usernameInput = findViewById(R.id.usernameInput);
         passwordInput = findViewById(R.id.passwordInput);
         loginButton = findViewById(R.id.loginButton);
-        signUpText = findViewById(R.id.signUpText);  // <-- Add this
+        signUpText = findViewById(R.id.signUpText);
 
         // Handle login button click
         loginButton.setOnClickListener(v -> {
@@ -82,8 +61,8 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void updateDrawState(TextPaint ds) {
                 super.updateDrawState(ds);
-                ds.setColor(Color.parseColor("#4894FE")); // Blue
-                ds.setUnderlineText(false); // No underline
+                ds.setColor(Color.parseColor("#4894FE"));
+                ds.setUnderlineText(false);
             }
         };
         spannable.setSpan(clickableSpan, 23, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
