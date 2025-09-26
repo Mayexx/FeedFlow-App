@@ -119,8 +119,7 @@ public class TemperatureStatsFragment extends Fragment {
                     } else {
                         tvTempAverage.setText("Average: --°C");
                     }
-
-                    // TODO: Calculate optimal/below/above percentages based on your rules
+                    
                     tvOptimalTime.setText("Time in optimal range: --%");
                     tvBelowOptimal.setText("Time below optimal: --%");
                     tvAboveOptimal.setText("Time above optimal: --%");
