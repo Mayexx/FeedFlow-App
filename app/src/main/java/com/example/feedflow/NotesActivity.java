@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -14,11 +15,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-import org.json.JSONArray;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+
 
 public class NotesActivity extends AppCompatActivity {
 
@@ -34,18 +39,17 @@ public class NotesActivity extends AppCompatActivity {
     private List<String> notesList;
     private SharedPreferences sharedPreferences;
 
+    private DatabaseReference notesRef;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes);
 
+        // Reference to "notes" node in Firebase
+        notesRef = FirebaseDatabase.getInstance().getReference("notes");
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        // Init SharedPreferences
-        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-
-        // Load saved notes from JSON
-        notesList = loadNotes();
 
         // Init UI components
         editTextDeadFish = findViewById(R.id.editTextDeadFish);
@@ -62,9 +66,13 @@ public class NotesActivity extends AppCompatActivity {
         setupSpinners();
 
         // Setup RecyclerView
+        notesList = new ArrayList<>();
         notesAdapter = new NotesAdapter(this, notesList);
         recyclerViewNotes.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewNotes.setAdapter(notesAdapter);
+
+        // Load notes from Firebase
+        loadNotesFromFirebase();
 
         // Handle Record button
         btnRecord.setOnClickListener(v -> saveNote());
@@ -116,12 +124,13 @@ public class NotesActivity extends AppCompatActivity {
                 ", Behaviour: " + behaviour +
                 (notes.isEmpty() ? "" : ", Notes: " + notes);
 
-        // Add to list + adapter
-        notesList.add(record);
-        notesAdapter.notifyItemInserted(notesList.size() - 1);
+        // Save to Firebase as string
+        String noteId = notesRef.push().getKey(); // generate unique ID
+        if (noteId != null) {
+            notesRef.child(noteId).setValue(record);
+        }
 
-        // Save list as JSON string
-        saveNotes(notesList);
+        Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show();
 
         // Clear inputs
         editTextDeadFish.setText("");
@@ -133,25 +142,23 @@ public class NotesActivity extends AppCompatActivity {
         spinnerBehaviour.setSelection(0);
     }
 
-    private void saveNotes(List<String> list) {
-        JSONArray jsonArray = new JSONArray(list);
-        sharedPreferences.edit().putString(NOTES_KEY, jsonArray.toString()).apply();
-    }
-
-    private List<String> loadNotes() {
-        List<String> list = new ArrayList<>();
-        try {
-            String json = sharedPreferences.getString(NOTES_KEY, null);
-            if (json != null && !json.isEmpty()) {
-                JSONArray jsonArray = new JSONArray(json);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    list.add(jsonArray.getString(i));
+    private void loadNotesFromFirebase() {
+        notesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                notesList.clear();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    String note = snapshot.getValue(String.class);
+                    notesList.add(note);
                 }
+                notesAdapter.notifyDataSetChanged();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return list;
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(NotesActivity.this, "Failed to load notes", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {

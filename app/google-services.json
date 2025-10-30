@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "355409558525",
+    "firebase_url": "https://feedflow-project-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "feedflow-project",
+    "storage_bucket": "feedflow-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:355409558525:android:bca8d6b5c9a1a9f8137794",
+        "android_client_info": {
+          "package_name": "com.example.feedflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPaW0la_CUvKmhnQb5iYjhHkqWSsOQXXw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

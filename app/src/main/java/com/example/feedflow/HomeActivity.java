@@ -1,4 +1,5 @@
 package com.example.feedflow;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -38,8 +39,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 public class HomeActivity extends AppCompatActivity {
+    //Firebase
+    private FirebaseFirestore db;
 
     private TextView txtTemperature, txtFeedLevel, txtFeedAmount, txtDeviceName;
     private Button btnFeedNow, btnIncrease, btnDecrease, btnAddSchedule;
@@ -66,6 +71,7 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        db = FirebaseFirestore.getInstance();
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
 
@@ -370,6 +376,10 @@ public class HomeActivity extends AppCompatActivity {
 
                         String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
+                        final String fTemp = temp;
+                        final String fFeed = feed;
+                        final String fTime = time;
+
                         handler.post(() -> {
                             // Update UI
                             txtTemperature.setText(temp + "°C");
@@ -385,10 +395,26 @@ public class HomeActivity extends AppCompatActivity {
 
                             // Save latest values
                             SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putString("latestTemperature", temp);
-                            editor.putString("latestFeedLevel", feed);
-                            editor.putString("lastUpdatedTime", time);
+                            editor.putString("latestTemperature", fTemp);
+                            editor.putString("latestFeedLevel", fFeed);
+                            editor.putString("lastUpdatedTime", fTime);
                             editor.apply();
+
+                            // 3) ------ Firestore write ------
+                            Map<String, Object> sensorData = new HashMap<>();
+                            sensorData.put("temperature", fTemp);
+                            sensorData.put("feedLevel", fFeed);
+                            sensorData.put("timestamp", System.currentTimeMillis());
+
+                            // Save under collection FeedFlow -> Device001 -> readings (you can change device ID)
+                            db.collection("FeedFlow")
+                                    .document("Device001")
+                                    .collection("readings")
+                                    .add(sensorData)
+                                    .addOnSuccessListener(documentReference ->
+                                            Log.d("FIRESTORE", "Data added with ID: " + documentReference.getId()))
+                                    .addOnFailureListener(e ->
+                                            Log.w("FIRESTORE", "Error adding document", e));
                         });
                     }
                 }
