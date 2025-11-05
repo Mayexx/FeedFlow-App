@@ -68,6 +68,7 @@
 
                     <TextView
                         android:text="Water Temperature"
+                        android:fontFamily="@font/poppins_medium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
 
@@ -76,6 +77,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="27.9°C"
+                        android:fontFamily="@font/poppins_medium"
                         android:textStyle="bold"/>
 
                     <TextView
@@ -83,6 +85,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Optimal"
+                        android:fontFamily="@font/poppins_medium"
                         android:textColor="#28A745" />
                 </LinearLayout>
 
@@ -97,6 +100,7 @@
 
                     <TextView
                         android:text="Feed Level"
+                        android:fontFamily="@font/poppins_medium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
 
@@ -105,6 +109,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="30%"
+                        android:fontFamily="@font/poppins_medium"
                         android:textStyle="bold"/>
 
                     <TextView
@@ -112,6 +117,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Refill Soon"
+                        android:fontFamily="@font/poppins_medium"
                         android:textColor="#FFA500" />
                 </LinearLayout>
             </LinearLayout>
@@ -128,13 +134,16 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Automatic Feeder" android:textStyle="bold"/>
+                    android:text="Automatic Feeder"
+                    android:fontFamily="@font/poppins_medium"
+                    android:textStyle="bold"/>
 
                 <Switch
                     android:id="@+id/autoSwitch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Auto"
+                    android:fontFamily="@font/poppins_medium"
                     android:layout_gravity="end"/>
 
                 <!-- Feed Amount -->
@@ -180,6 +189,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Feed Now"
+                        android:fontFamily="@font/poppins_medium"
                         android:backgroundTint="#4894FE"
                         android:textColor="#FFFFFF"/>
                 </LinearLayout>
@@ -252,17 +262,6 @@
                         android:fontFamily="@font/poppins_regular"/>
                 </LinearLayout>
             </LinearLayout>
-            <!-- Feeding History Card -->
-            <LinearLayout
-                android:id="@+id/historyContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/card_bg"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:layout_marginTop="16dp">
-            </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
 

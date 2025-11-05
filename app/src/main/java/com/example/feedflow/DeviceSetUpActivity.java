@@ -19,7 +19,7 @@ import androidx.core.app.ActivityCompat;
 import java.util.ArrayList;
 import java.util.Set;
 
-public class ConnectDeviceActivity extends AppCompatActivity {
+public class DeviceSetUpActivity extends AppCompatActivity {
 
     private BluetoothAdapter bluetoothAdapter;
     private Spinner deviceSpinner;
@@ -64,7 +64,7 @@ public class ConnectDeviceActivity extends AppCompatActivity {
 
         cancelButton.setOnClickListener(v -> finish());
         confirmButton.setOnClickListener(v ->{
-            Intent intent = new Intent(ConnectDeviceActivity.this,HomeActivity.class);
+            Intent intent = new Intent(DeviceSetUpActivity.this,HomeActivity.class);
             startActivity(intent);
         });
     }

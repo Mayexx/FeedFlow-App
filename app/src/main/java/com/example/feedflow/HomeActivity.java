@@ -49,7 +49,6 @@ public class HomeActivity extends AppCompatActivity {
     private TextView txtTemperature, txtFeedLevel, txtFeedAmount, txtDeviceName;
     private Button btnFeedNow, btnIncrease, btnDecrease, btnAddSchedule;
     private Switch autoSwitch;
-    private LinearLayout historyContainer;
     private ProgressBar progressTemperature;
     private TextView txtTempThreshold;
     private int tempThreshold;
@@ -80,7 +79,6 @@ public class HomeActivity extends AppCompatActivity {
         restoreSavedData();
         setupButtons();
         setupBottomNavigation(bottomNav);
-        loadFeedingHistory();
     }
 
     private void initViews() {
@@ -92,7 +90,6 @@ public class HomeActivity extends AppCompatActivity {
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
         autoSwitch = findViewById(R.id.autoSwitch);
-        historyContainer = findViewById(R.id.historyContainer);
         progressTemperature = findViewById(R.id.progressTemperature);
         txtTempThreshold = findViewById(R.id.txtTemperature);
 
@@ -145,9 +142,6 @@ public class HomeActivity extends AppCompatActivity {
         statsEditor.putLong("lastUpdated", now);
         statsEditor.apply();
 
-        // Add to history
-        addFeedingHistory("Manual Feeding\n" + time, amount + " kg");
-
         Toast.makeText(this, "Fed " + amount + " kg at " + time, Toast.LENGTH_SHORT).show();
     }
 
@@ -175,56 +169,10 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-
-    // Feeding History methods
-    private void addFeedingHistory(String details, String amount) {
-        LinearLayout item = (LinearLayout) LayoutInflater.from(this)
-                .inflate(R.layout.item_history, historyContainer, false);
-
-        TextView txtDetails = item.findViewById(R.id.txtHistoryDetails);
-        TextView txtAmount = item.findViewById(R.id.txtHistoryAmount);
-
-        txtDetails.setText(details);
-        txtAmount.setText(amount);
-
-        historyContainer.addView(item, 0); // add latest on top
-
-        // Save in list + SharedPreferences
-        feedingHistory.add(0, details + "|" + amount);
-        saveFeedingHistory();
-    }
-
     private void saveFeedingHistory() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("feedingHistory", String.join(";;", feedingHistory));
         editor.apply();
-    }
-
-    private void loadFeedingHistory() {
-        feedingHistory.clear();
-        historyContainer.removeAllViews();
-
-        String saved = sharedPreferences.getString("feedingHistory", "");
-        if (!saved.isEmpty()) {
-            String[] items = saved.split(";;");
-            for (String entry : items) {
-                String[] parts = entry.split("\\|");
-                if (parts.length == 2) {
-                    feedingHistory.add(entry);
-                    // rebuild UI
-                    LinearLayout item = (LinearLayout) LayoutInflater.from(this)
-                            .inflate(R.layout.item_history, historyContainer, false);
-
-                    TextView txtDetails = item.findViewById(R.id.txtHistoryDetails);
-                    TextView txtAmount = item.findViewById(R.id.txtHistoryAmount);
-
-                    txtDetails.setText(parts[0]);
-                    txtAmount.setText(parts[1]);
-
-                    historyContainer.addView(item);
-                }
-            }
-        }
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
@@ -247,11 +195,6 @@ public class HomeActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_alerts) {
                 startActivity(new Intent(HomeActivity.this, AlertsActivity.class));
-                overridePendingTransition(0,0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
                 overridePendingTransition(0,0);
                 finish();
                 return true;

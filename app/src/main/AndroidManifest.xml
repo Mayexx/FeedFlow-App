@@ -30,13 +30,9 @@
         <activity
             android:name=".GetStartedActivity"
             android:exported="false"/>
-        <activity android:name=".LoginActivity"
-            android:exported="false"/>
-        <activity android:name=".SignUpActivity"
-            android:exported="false"/>
         <activity android:name=".BluetoothSetUpActivity"
-            android:exported="false"/>
-        <activity android:name=".ConnectDeviceActivity"
+            android:exported="true"/>
+        <activity android:name=".DeviceSetUpActivity"
             android:exported="false"/>
         <activity android:name=".HomeActivity"
             android:exported="false"/>
@@ -45,8 +41,6 @@
         <activity android:name=".NotesActivity"
             android:exported="false"/>
         <activity android:name=".AlertsActivity"
-            android:exported="false"/>
-        <activity android:name=".SettingsActivity"
             android:exported="false"/>
         <activity android:name=".NoteDetailActivity"
             android:exported="false"/>

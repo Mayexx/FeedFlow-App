@@ -22,14 +22,6 @@
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:fontFamily="@font/poppins_bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Fish Cage 1\nLast Updated: Just now"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:fontFamily="@font/poppins_regular" />
     </LinearLayout>
 
     <!-- Switch to mark all alerts -->

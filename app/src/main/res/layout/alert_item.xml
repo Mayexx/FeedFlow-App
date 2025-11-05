@@ -20,6 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Alert Title"
+            android:fontFamily="@font/poppins_medium"
             android:textStyle="bold"
             android:textSize="18sp"
             android:textColor="#212121" />
@@ -31,6 +32,7 @@
             android:layout_height="wrap_content"
             android:text="This is a detailed description of the alert message."
             android:textSize="14sp"
+            android:fontFamily="@font/poppins_regular"
             android:textColor="#555555"
             android:layout_marginTop="6dp" />
 
@@ -48,6 +50,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="10:00 AM"
+                android:fontFamily="@font/poppins_regular"
                 android:textSize="13sp"
                 android:textColor="#757575" />
 
@@ -59,6 +62,7 @@
                 android:padding="6dp"
                 android:background="@drawable/status_badge_bg"
                 android:text="Warning"
+                android:fontFamily="@font/poppins_regular"
                 android:textSize="12sp"
                 android:textColor="#FFFFFF" />
         </LinearLayout>

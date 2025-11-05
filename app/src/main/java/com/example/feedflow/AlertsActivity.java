@@ -83,11 +83,6 @@ public class AlertsActivity extends AppCompatActivity {
                 return true;
             } else if (id == R.id.nav_alerts) {
                 return true; // already here
-            } else if (id == R.id.nav_settings) {
-                startActivity(new Intent(AlertsActivity.this, SettingsActivity.class));
-                overridePendingTransition(0,0);
-                finish();
-                return true;
             }
             return false;
         });
@@ -112,7 +107,7 @@ public class AlertsActivity extends AppCompatActivity {
         alertsRef.add(alert2);
     }
 
-    // 🔹 Fetch alerts from Firestore in real-time
+    // Fetch alerts from Firestore in real-time
     private void fetchAlerts() {
         alertsRef.addSnapshotListener((querySnapshot, e) -> {
             if (e != null || querySnapshot == null) return;

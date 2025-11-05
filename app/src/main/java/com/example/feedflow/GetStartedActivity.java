@@ -14,7 +14,7 @@ public class GetStartedActivity extends AppCompatActivity {
 
         Button btnGetStarted = findViewById(R.id.buttonGetStarted);
         btnGetStarted.setOnClickListener(v -> {
-            Intent intent = new Intent(GetStartedActivity.this, LoginActivity.class);
+            Intent intent = new Intent(GetStartedActivity.this, BluetoothSetUpActivity.class);
             startActivity(intent);
         });
     }
