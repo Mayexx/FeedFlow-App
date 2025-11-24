@@ -9,12 +9,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,12 +54,10 @@ public class AlertsActivity extends AppCompatActivity {
                 }
             });
         });
-
         setupBottomNavigation(bottomNav);
     }
-
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
-        bottomNav.setSelectedItemId(R.id.nav_alerts); // highlight Alerts tab
+        bottomNav.setSelectedItemId(R.id.nav_alerts);
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -82,12 +78,11 @@ public class AlertsActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_alerts) {
-                return true; // already here
+                return true;
             }
             return false;
         });
     }
-
     // 🔹 Method to add a new alert into Firestore (example only)
     private void addSampleAlerts() {
         // Create a map
@@ -143,9 +138,9 @@ public class AlertsActivity extends AppCompatActivity {
 
         // Change color based on status
         if ("Read".equals(status)) {
-            statusView.setTextColor(0xFF4CAF50); // Green
+            statusView.setTextColor(0xFF0000FF); // Bright Blue
         } else {
-            statusView.setTextColor(0xFFFF8800); // Orange
+            statusView.setTextColor(0xFFFF0000); // Bright Red
         }
 
         alertsContainer.addView(alertView);

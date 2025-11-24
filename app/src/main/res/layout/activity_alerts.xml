@@ -27,9 +27,9 @@
     <!-- Switch to mark all alerts -->
     <Switch
         android:id="@+id/switchMarkAll"
-        android:layout_width="wrap_content"
+        android:layout_width="180dp"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="240dp"
+        android:layout_marginLeft="220dp"
         android:text="Mark all as read"
         android:padding="12dp" />
 

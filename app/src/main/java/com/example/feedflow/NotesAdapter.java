@@ -11,6 +11,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.CollectionReference;
+
 import java.util.List;
 import java.util.Map;
 
@@ -18,12 +20,12 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     private List<Map<String, Object>> notesList;
     private Context context;
+    private CollectionReference notesRef;
 
-    // Correct constructor for Firestore usage
-
-    public NotesAdapter(Context context, List<Map<String, Object>> notesList) {
+    public NotesAdapter(Context context, List<Map<String, Object>> notesList, CollectionReference notesRef) {
         this.context = context;
         this.notesList = notesList;
+        this.notesRef = notesRef;
     }
 
     @NonNull
@@ -49,12 +51,18 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, NoteDetailActivity.class);
-            intent.putExtra("note_id", (String) noteData.get("id")); // Pass Firestore document ID
+            intent.putExtra("note_id", (String) noteData.get("id"));
             context.startActivity(intent);
         });
 
         holder.btnDelete.setOnClickListener(v -> {
-            // Optional: implement Firestore deletion if needed
+            String docId = (String) noteData.get("id");
+            if (docId != null) {
+                notesRef.document(docId).delete()
+                        .addOnSuccessListener(aVoid -> notesList.remove(position))
+                        .addOnFailureListener(e -> {});
+                notifyItemRemoved(position);
+            }
         });
     }
 

@@ -39,7 +39,6 @@ import java.util.HashMap;
 public class HomeActivity extends AppCompatActivity {
     //Firebase
     private FirebaseFirestore db;
-
     private TextView txtTemperature, txtFeedLevel, txtFeedAmount, txtDeviceName;
     private Button btnFeedNow, btnIncrease, btnDecrease;
     private ProgressBar progressTemperature;
@@ -47,18 +46,13 @@ public class HomeActivity extends AppCompatActivity {
     private int tempThreshold;
     private TextView waterTemperature, txtWaterTempStatus;
     private TextView txtFeedLevelStatus;
-
-
     private BluetoothAdapter btAdapter;
     private BluetoothSocket btSocket;
     private InputStream inputStream;
     private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
     private int feedAmount = 25;
-
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "FeedFlowPrefs";
-
     private String connectedDeviceName = "Not Connected";
     private List<String> feedingHistory = new ArrayList<>(); // store feeding logs
 
@@ -202,25 +196,46 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        // For Android 12+ → Need runtime permissions
+        // Check runtime permissions (Android 12+)
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this,
-                    new String[]{
-                            Manifest.permission.BLUETOOTH_SCAN,
-                            Manifest.permission.BLUETOOTH_CONNECT
-                    }, 100);
+                    new String[]{Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT}, 100);
             return;
         }
 
-        // Cancel ongoing discovery if any
+        // Load the device name from Firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("settings").document("device") // Example: "settings" collection, "device" doc
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String targetDeviceName = doc.getString("deviceName");
+                        startBluetoothScan(targetDeviceName);
+                    } else {
+                        Toast.makeText(this, "No device info found in Firestore", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to get device info", Toast.LENGTH_SHORT).show());
+    }
+
+    private void startBluetoothScan(String targetDeviceName) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
         if (btAdapter.isDiscovering()) {
             btAdapter.cancelDiscovery();
         }
         btAdapter.startDiscovery();
 
-        // Register BroadcastReceiver for found devices
         BroadcastReceiver receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -237,13 +252,9 @@ public class HomeActivity extends AppCompatActivity {
                         String deviceAddress = device.getAddress();
 
                         Log.d("BT_SCAN", "Found: " + deviceName + " [" + deviceAddress + "]");
-                        Toast.makeText(context, "Found: " + deviceName, Toast.LENGTH_SHORT).show();
 
-                        // Example: auto-connect to first HC-05 / ESP device found
-                        if (deviceName.startsWith("HC-05") || deviceName.startsWith("ESP")) {
-                            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                                return;
-                            }
+                        // Only connect if device matches Firestore
+                        if (deviceName.equals(targetDeviceName)) {
                             btAdapter.cancelDiscovery();
                             connectToDevice(device);
                             txtDeviceName.setText("Connecting: " + deviceName);
@@ -253,9 +264,11 @@ public class HomeActivity extends AppCompatActivity {
             }
         };
 
+        // Don't forget to register the receiver
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
     }
+
     private void connectToDevice(BluetoothDevice device) {
         new Thread(() -> {
             try {
