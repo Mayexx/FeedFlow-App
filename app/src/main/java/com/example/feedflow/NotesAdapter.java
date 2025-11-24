@@ -2,7 +2,6 @@ package com.example.feedflow;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,23 +11,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHolder> {
 
-    private List<String> notesList;
+    private List<Map<String, Object>> notesList;
     private Context context;
-    private SharedPreferences sharedPreferences;
-    private static final String PREFS_NAME = "FeedFlowNotes";
-    private static final String NOTES_KEY = "saved_notes";
 
-    public NotesAdapter(Context context, List<String> notesList) {
+    // Correct constructor for Firestore usage
+
+    public NotesAdapter(Context context, List<Map<String, Object>> notesList) {
         this.context = context;
-        this.notesList = new ArrayList<>(notesList);
-        this.sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        this.notesList = notesList;
     }
 
     @NonNull
@@ -40,24 +35,26 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
-        String note = notesList.get(position);
-        holder.tvNote.setText(note);
+        Map<String, Object> noteData = notesList.get(position);
 
-        // Open note detail on click
+        String displayText = "Dead Fish: " + noteData.get("deadFish") +
+                ", Temp: " + noteData.get("temperature") + "°C" +
+                ", Weather: " + noteData.get("weather") +
+                ", Feeding: " + noteData.get("feedingTime") +
+                ", Amount: " + noteData.get("amount") + "kg" +
+                ", Behaviour: " + noteData.get("behaviour") +
+                (noteData.get("notes") == null ? "" : ", Notes: " + noteData.get("notes"));
+
+        holder.tvNote.setText(displayText);
+
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, NoteDetailActivity.class);
-            intent.putExtra("note_text", note);
+            intent.putExtra("note_id", (String) noteData.get("id")); // Pass Firestore document ID
             context.startActivity(intent);
         });
 
-        // Delete button logic
         holder.btnDelete.setOnClickListener(v -> {
-            notesList.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, notesList.size());
-
-            Set<String> updatedSet = new HashSet<>(notesList);
-            sharedPreferences.edit().putStringSet(NOTES_KEY, updatedSet).apply();
+            // Optional: implement Firestore deletion if needed
         });
     }
 

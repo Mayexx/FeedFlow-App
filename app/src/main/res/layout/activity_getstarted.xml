@@ -30,7 +30,7 @@
         android:id="@+id/textViewTagline"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="212dp"
+        android:layout_marginTop="28dp"
         android:fontFamily="@font/poppins_regular"
         android:gravity="center"
         android:text="Ready to make fish farming\neasier and smarter?"
@@ -47,15 +47,15 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="32dp"
-        android:layout_marginBottom="48dp"
-        android:background="@drawable/button_outline_white"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/button_outline_black"
         android:fontFamily="@font/poppins_bold"
         android:paddingVertical="14dp"
         android:text="Get Started"
         android:textColor="@android:color/black"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

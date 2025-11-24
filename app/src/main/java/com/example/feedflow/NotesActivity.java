@@ -1,5 +1,6 @@
 package com.example.feedflow;
 
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,47 +10,62 @@ import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 
 public class NotesActivity extends AppCompatActivity {
 
+
     private static final String PREFS_NAME = "FeedFlowNotes";
     private static final String NOTES_KEY = "saved_notes";
+
 
     private EditText editTextDeadFish, editTextTemp, editTextAmount, editTextNotes;
     private Spinner spinnerWeather, spinnerFeedingTime, spinnerBehaviour;
     private Button btnRecord;
     private RecyclerView recyclerViewNotes;
 
+
     private NotesAdapter notesAdapter;
-    private List<String> notesList;
+    private List<Map<String, Object>> notesList;
     private SharedPreferences sharedPreferences;
 
+
     private DatabaseReference notesRef;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notes);
 
+
         // Reference to "notes" node in Firebase
         notesRef = FirebaseDatabase.getInstance().getReference("notes");
 
+
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+
 
         // Init UI components
         editTextDeadFish = findViewById(R.id.editTextDeadFish);
@@ -62,24 +78,21 @@ public class NotesActivity extends AppCompatActivity {
         btnRecord = findViewById(R.id.btnRecord);
         recyclerViewNotes = findViewById(R.id.recyclerViewNotes);
 
+
         // Setup Spinners
         setupSpinners();
-
         // Setup RecyclerView
         notesList = new ArrayList<>();
         notesAdapter = new NotesAdapter(this, notesList);
         recyclerViewNotes.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewNotes.setAdapter(notesAdapter);
 
-        // Load notes from Firebase
-        loadNotesFromFirebase();
-
+        // Load notes from Firestore
+        loadNotesFromFirestore();
         // Handle Record button
         btnRecord.setOnClickListener(v -> saveNote());
-
         setupBottomNavigation(bottomNav);
     }
-
     private void setupSpinners() {
         // Weather
         ArrayAdapter<CharSequence> weatherAdapter = ArrayAdapter.createFromResource(
@@ -88,7 +101,6 @@ public class NotesActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item
         );
         spinnerWeather.setAdapter(weatherAdapter);
-
         // Feeding time
         ArrayAdapter<CharSequence> feedingAdapter = ArrayAdapter.createFromResource(
                 this,
@@ -96,7 +108,6 @@ public class NotesActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item
         );
         spinnerFeedingTime.setAdapter(feedingAdapter);
-
         // Behaviour
         ArrayAdapter<CharSequence> behaviourAdapter = ArrayAdapter.createFromResource(
                 this,
@@ -105,7 +116,6 @@ public class NotesActivity extends AppCompatActivity {
         );
         spinnerBehaviour.setAdapter(behaviourAdapter);
     }
-
     private void saveNote() {
         String deadFish = editTextDeadFish.getText().toString().trim();
         String temp = editTextTemp.getText().toString().trim();
@@ -114,7 +124,6 @@ public class NotesActivity extends AppCompatActivity {
         String weather = spinnerWeather.getSelectedItem().toString();
         String feedingTime = spinnerFeedingTime.getSelectedItem().toString();
         String behaviour = spinnerBehaviour.getSelectedItem().toString();
-
         // Build note string
         String record = "Dead Fish: " + deadFish +
                 ", Temp: " + temp + "°C" +
@@ -123,15 +132,12 @@ public class NotesActivity extends AppCompatActivity {
                 ", Amount: " + amount + "kg" +
                 ", Behaviour: " + behaviour +
                 (notes.isEmpty() ? "" : ", Notes: " + notes);
-
         // Save to Firebase as string
         String noteId = notesRef.push().getKey(); // generate unique ID
         if (noteId != null) {
             notesRef.child(noteId).setValue(record);
         }
-
         Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show();
-
         // Clear inputs
         editTextDeadFish.setText("");
         editTextTemp.setText("");
@@ -141,24 +147,27 @@ public class NotesActivity extends AppCompatActivity {
         spinnerFeedingTime.setSelection(0);
         spinnerBehaviour.setSelection(0);
     }
+    private void loadNotesFromFirestore() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("notes")
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(this, "Failed to load notes", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-    private void loadNotesFromFirebase() {
-        notesRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                notesList.clear();
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String note = snapshot.getValue(String.class);
-                    notesList.add(note);
-                }
-                notesAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Toast.makeText(NotesActivity.this, "Failed to load notes", Toast.LENGTH_SHORT).show();
-            }
-        });
+                    if (value != null) {
+                        notesList.clear();
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            Map<String, Object> noteData = doc.getData();
+                            if (noteData != null) {
+                                noteData.put("id", doc.getId()); // add document ID for details
+                                notesList.add(noteData);
+                            }
+                        }
+                        notesAdapter.notifyDataSetChanged();
+                    }
+                });
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
@@ -177,6 +186,8 @@ public class NotesActivity extends AppCompatActivity {
                 startActivity(new Intent(NotesActivity.this, StatsActivity.class));
                 overridePendingTransition(0,0);
                 finish();
+                // *** FIX: The 'return true;' statement was missing here. ***
+                return true;
             } else if (id == R.id.nav_notes) {
                 return true;
             } else if (id == R.id.nav_alerts) {
