@@ -54,7 +54,7 @@ public class FeedingStatsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_feeding_stats, container, false);
+        return inflater.inflate(R.layout.fragment_temperature_stats, container, false);
     }
 
     @Override

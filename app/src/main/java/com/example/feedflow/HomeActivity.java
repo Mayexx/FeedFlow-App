@@ -2,6 +2,7 @@ package com.example.feedflow;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -27,6 +28,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,6 +51,7 @@ public class HomeActivity extends AppCompatActivity {
     private BluetoothAdapter btAdapter;
     private BluetoothSocket btSocket;
     private InputStream inputStream;
+    private OutputStream outputStream; // Add this line
     private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private int feedAmount = 25;
     private SharedPreferences sharedPreferences;
@@ -95,6 +98,9 @@ public class HomeActivity extends AppCompatActivity {
         txtTempThreshold.setText("Temperature: " + tempThreshold + "°C");
     }
     private void saveFeedLog(int amount) {
+
+        sendBluetoothCommand("FEED:" + amount);
+
         String time = new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault()).format(new Date());
         long now = System.currentTimeMillis();
 
@@ -130,7 +136,39 @@ public class HomeActivity extends AppCompatActivity {
         statsEditor.putLong("lastUpdated", now);
         statsEditor.apply();
 
+        Map<String, Object> feedLog = new HashMap<>();
+        feedLog.put("amount", amount);
+        feedLog.put("time", time);
+        feedLog.put("timestamp", now);
+        feedLog.put("todayFeed", todayFeed);
+        feedLog.put("totalFeed", totalFeed);
+
+        db.collection("FeedFlow")
+                .document("Device001")
+                .collection("feedLogs")
+                .add(feedLog)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("Firestore", "Feed log saved with ID: " + documentReference.getId());
+                    Toast.makeText(this, "Fed " + amount + " kg at " + time, Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "Error saving feed log", e);
+                    Toast.makeText(this, "Fed " + amount + " kg (offline)", Toast.LENGTH_SHORT).show();
+                });
+
         Toast.makeText(this, "Fed " + amount + " kg at " + time, Toast.LENGTH_SHORT).show();
+    }
+
+    private void sendBluetoothCommand(String command) {
+        if (btSocket != null && btSocket.isConnected()) {
+            try {
+                btSocket.getOutputStream().write((command + "\n").getBytes());
+                Log.d("BT_SEND", "Sent: " + command);
+            } catch (IOException e) {
+                Log.e("BT_SEND", "Failed to send command", e);
+                Toast.makeText(this, "Failed to send feed command", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
     private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
@@ -269,6 +307,7 @@ public class HomeActivity extends AppCompatActivity {
         registerReceiver(receiver, filter);
     }
 
+    @SuppressLint("SetTextI18n")
     private void connectToDevice(BluetoothDevice device) {
         new Thread(() -> {
             try {
@@ -278,6 +317,7 @@ public class HomeActivity extends AppCompatActivity {
                 btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
                 btSocket.connect();
                 inputStream = btSocket.getInputStream();
+                outputStream = btSocket.getOutputStream(); // Add this line
                 connectedDeviceName = device.getName();
 
                 runOnUiThread(() -> {
