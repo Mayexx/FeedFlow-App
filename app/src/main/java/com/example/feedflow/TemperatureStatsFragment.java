@@ -122,7 +122,6 @@ public class TemperatureStatsFragment extends Fragment {
         dataSet.setLineWidth(2f);
         dataSet.setCircleRadius(4f);
         dataSet.setValueTextSize(10f);
-
         LineData lineData = new LineData(dataSet);
         tempLineChart.setData(lineData);
 
