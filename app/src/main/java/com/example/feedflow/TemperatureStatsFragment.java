@@ -28,6 +28,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import android.widget.TextView;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +47,8 @@ public class TemperatureStatsFragment extends Fragment {
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
+
+    private TextView tvTempCurrent, tvTempAverage, tvOptimalTime, tvBelowOptimal, tvAboveOptimal;
 
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -64,15 +68,20 @@ public class TemperatureStatsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         tempLineChart = view.findViewById(R.id.tempLineChart);
+
+        tvTempCurrent = view.findViewById(R.id.tvTempCurrent);
+        tvTempAverage = view.findViewById(R.id.tvTempAverage);
+        tvOptimalTime = view.findViewById(R.id.tvOptimalTime);
+        tvBelowOptimal = view.findViewById(R.id.tvBelowOptimal);
+        tvAboveOptimal = view.findViewById(R.id.tvAboveOptimal);
+
         db = FirebaseFirestore.getInstance();
 
         fetchWeeklyTemperature();
         connectToEsp32();
     }
 
-    // ------------------------------------------------------------
-    // 🔹 Fetch last 7 days temperature from Firestore
-    // ------------------------------------------------------------
+    // Fetch last 7 days temperature from Firestore
     private void fetchWeeklyTemperature() {
         db.collection("FeedFlow")
                 .document("Device001")
@@ -99,13 +108,12 @@ public class TemperatureStatsFragment extends Fragment {
                     }
 
                     updateLineChart(entries);
+                    updateStats(); // Update below chart stats
                 })
                 .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to load chart", e));
     }
 
-    // ------------------------------------------------------------
-    // 🔹 Update chart with weekly temperature
-    // ------------------------------------------------------------
+    // Update chart with weekly temperature
     private void updateLineChart(ArrayList<Entry> entries) {
         LineDataSet dataSet = new LineDataSet(entries, "Sea Water Temp (°C)");
         dataSet.setColor(0xFF0288D1); // Blue line
@@ -130,12 +138,13 @@ public class TemperatureStatsFragment extends Fragment {
         tempLineChart.getXAxis().setGranularity(1f);
         tempLineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
 
+        Description desc = new Description();
+        desc.setText("Sea Water Temperature (last 7 days)");
+        tempLineChart.setDescription(desc);
+
         tempLineChart.invalidate();
     }
 
-    // ------------------------------------------------------------
-    // 🔹 Last 7 days labels for X-axis
-    // ------------------------------------------------------------
     private ArrayList<String> getLast7DaysLabels() {
         ArrayList<String> labels = new ArrayList<>();
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("EEE", Locale.getDefault());
@@ -149,9 +158,30 @@ public class TemperatureStatsFragment extends Fragment {
         return labels;
     }
 
-    // ------------------------------------------------------------
-    // 🔹 Bluetooth connection to ESP32 to read live data
-    // ------------------------------------------------------------
+    // Update stats below the chart
+    private void updateStats() {
+        if (tempHistory.isEmpty()) return;
+
+        double sum = 0;
+        int optimal = 0, below = 0, above = 0;
+
+        for (double t : tempHistory) {
+            sum += t;
+            if (t >= OPTIMAL_MIN && t <= OPTIMAL_MAX) optimal++;
+            else if (t < OPTIMAL_MIN) below++;
+            else above++;
+        }
+
+        double avg = sum / tempHistory.size();
+
+        tvTempCurrent.setText(String.format("Current: %.2f°C", tempHistory.get(tempHistory.size() - 1)));
+        tvTempAverage.setText(String.format("Average: %.2f°C", avg));
+        tvOptimalTime.setText(String.format("Time in optimal: %.0f%%", optimal * 100.0 / tempHistory.size()));
+        tvBelowOptimal.setText(String.format("Time below optimal: %.0f%%", below * 100.0 / tempHistory.size()));
+        tvAboveOptimal.setText(String.format("Time above optimal: %.0f%%", above * 100.0 / tempHistory.size()));
+    }
+
+    // Bluetooth connection to ESP32 for live data
     private void connectToEsp32() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) return;
@@ -193,14 +223,17 @@ public class TemperatureStatsFragment extends Fragment {
                             double waterTemp = Double.parseDouble(parts[0]);
 
                             requireActivity().runOnUiThread(() -> {
+                                // Add to history
                                 tempHistory.add(0, waterTemp);
                                 if (tempHistory.size() > 50) tempHistory.remove(tempHistory.size() - 1);
 
+                                // Take last 7 for chart
                                 ArrayList<Entry> entries = new ArrayList<>();
                                 for (int i = 0; i < tempHistory.size() && i < 7; i++)
                                     entries.add(new Entry(i, tempHistory.get(tempHistory.size() - 1 - i).floatValue()));
 
                                 updateLineChart(entries);
+                                updateStats(); // Update stats below chart
                                 saveTemperature(waterTemp);
                             });
                         } catch (Exception ignored) {}
