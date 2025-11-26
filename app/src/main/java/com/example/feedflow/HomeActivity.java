@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
@@ -47,12 +48,22 @@ public class HomeActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         // Bluetooth
-        serialBT = new BluetoothSerial(this);  // pass the activity context
-        serialBT.connect(connectedDeviceAddress); // your MAC address
-        serialBT.setCallbacks(data -> {
-            String received = new String(data).trim();
-            runOnUiThread(() -> parseAndUpdateUI(received));
-        });
+        serialBT = new BluetoothSerial(this);
+
+        new Thread(() -> {
+            serialBT.connect(connectedDeviceAddress); // blocking in background thread
+
+            runOnUiThread(() -> {
+                // Once connected, set the callback and update UI
+                serialBT.setCallbacks(data -> {
+                    String received = new String(data).trim();
+                    runOnUiThread(() -> parseAndUpdateUI(received));
+                });
+
+                // Optionally show a toast
+                Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
+            });
+        }).start();
 
         // Notification channel
         createNotificationChannel();
