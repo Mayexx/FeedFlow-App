@@ -1,20 +1,24 @@
 package com.example.feedflow;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.app.NotificationCompat;
+
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import java.util.HashMap;
-import java.util.Map;
 
 public class AlertsActivity extends AppCompatActivity {
 
@@ -24,6 +28,8 @@ public class AlertsActivity extends AppCompatActivity {
     // Firestore reference
     private FirebaseFirestore db;
     private CollectionReference alertsRef;
+
+    private final String CHANNEL_ID = "alerts_channel";
 
     @SuppressLint({"NonConstantResourceId", "MissingInflatedId"})
     @Override
@@ -51,8 +57,13 @@ public class AlertsActivity extends AppCompatActivity {
                 }
             });
         });
+
         setupBottomNavigation(bottomNav);
+
+        // 🔹 Create notification channel
+        createNotificationChannel();
     }
+
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
         bottomNav.setSelectedItemId(R.id.nav_alerts);
 
@@ -80,9 +91,7 @@ public class AlertsActivity extends AppCompatActivity {
             return false;
         });
     }
-    // 🔹 Method to add a new alert into Firestore (example only)
 
-    // Fetch alerts from Firestore in real-time
     private void fetchAlerts() {
         alertsRef.addSnapshotListener((querySnapshot, e) -> {
             if (e != null || querySnapshot == null) return;
@@ -95,34 +104,73 @@ public class AlertsActivity extends AppCompatActivity {
                 String status = doc.getString("status");
 
                 addAlert(title, desc, time, status);
+
+                // 🔹 Send local notification for Warning alerts
+                if ("Warning".equals(status)) {
+                    sendLocalNotification(title, desc);
+                }
             }
         });
     }
 
-    // 🔹 Display alert card in UI
     private void addAlert(String title, String description, String time, String status) {
         CardView alertView = (CardView)
                 getLayoutInflater().inflate(R.layout.alert_item, alertsContainer, false);
 
-        // Bind views
         TextView titleView = alertView.findViewById(R.id.alertTitle);
         TextView descView = alertView.findViewById(R.id.alertDescription);
         TextView timeView = alertView.findViewById(R.id.alertTime);
         TextView statusView = alertView.findViewById(R.id.alertStatus);
 
-        // Set values
         titleView.setText(title);
         descView.setText(description);
         timeView.setText(time);
         statusView.setText(status);
 
-        // Change color based on status
         if ("Read".equals(status)) {
-            statusView.setTextColor(0xFF0000FF); // Bright Blue
+            statusView.setTextColor(0xFF0000FF); // Blue
         } else {
-            statusView.setTextColor(0xFFFF0000); // Bright Red
+            statusView.setTextColor(0xFFFF0000); // Red
         }
 
         alertsContainer.addView(alertView);
+    }
+
+    // 🔹 Create notification channel (required for Android 8+)
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Alerts",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            channel.setDescription("Notifications for new alerts");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    // 🔹 Send local notification
+    private void sendLocalNotification(String title, String message) {
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        Intent intent = new Intent(this, AlertsActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_alerts) // replace with your icon
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        if (manager != null) {
+            manager.notify((int) System.currentTimeMillis(), builder.build());
+        }
     }
 }
