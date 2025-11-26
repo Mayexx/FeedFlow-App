@@ -238,7 +238,7 @@ public class HomeActivity extends AppCompatActivity {
                 connectedDeviceName = device.getName();
 
                 runOnUiThread(() -> {
-                    txtDeviceName.setText(connectedDeviceName + "\nLast Updated: Waiting for data...");
+                    txtDeviceMac.setText(connectedDeviceName + "\nLast Updated: Waiting for data...");
                     Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
                 });
 
@@ -246,7 +246,7 @@ public class HomeActivity extends AppCompatActivity {
 
             } catch (IOException e) {
                 runOnUiThread(() -> {
-                    txtDeviceName.setText("Not Connected");
+                    txtDeviceMac.setText("Not Connected");
                     Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show();
                 });
                 Log.e("BT_CONNECT", "Connection failed", e);
@@ -302,7 +302,7 @@ public class HomeActivity extends AppCompatActivity {
         updateFeedLevelStatus(Double.parseDouble(feedStr));
 
         // Update device info
-        txtDeviceName.setText(connectedDeviceName + "\nLast Updated: " + time);
+        txtDeviceMac.setText(connectedDeviceName + "\nLast Updated: " + time);
 
         // Save latest values locally
         sharedPreferences.edit()
