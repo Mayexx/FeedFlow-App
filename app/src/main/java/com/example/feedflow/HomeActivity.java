@@ -1,5 +1,4 @@
 package com.example.feedflow;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -25,39 +24,47 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.UUID;
 
 public class HomeActivity extends AppCompatActivity {
-    //Firebase
+    // Firebase
     private FirebaseFirestore db;
+
+    // UI
     private TextView txtTemperature, txtFeedLevel, txtFeedAmount, txtDeviceName;
     private Button btnFeedNow, btnIncrease, btnDecrease;
     private ProgressBar progressTemperature;
     private TextView txtTempThreshold;
-    private int tempThreshold;
     private TextView waterTemperature, txtWaterTempStatus;
     private TextView txtFeedLevelStatus;
+
+    // Bluetooth
     private BluetoothAdapter btAdapter;
     private BluetoothSocket btSocket;
     private InputStream inputStream;
-    private OutputStream outputStream; // Add this line
+    private OutputStream outputStream;
     private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    // State & prefs
     private int feedAmount = 25;
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "FeedFlowPrefs";
     private String connectedDeviceName = "Not Connected";
-    private List<String> feedingHistory = new ArrayList<>(); // store feeding logs
+    private List<String> feedingHistory = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,32 +92,50 @@ public class HomeActivity extends AppCompatActivity {
         btnDecrease = findViewById(R.id.btnDecrease);
         txtTempThreshold = findViewById(R.id.txtTemperature);
         waterTemperature = findViewById(R.id.waterTemperature);
-        txtWaterTempStatus = findViewById(R.id.txtWaterTempStatus); // optional, if you added it
+        txtWaterTempStatus = findViewById(R.id.txtWaterTempStatus);
         progressTemperature = findViewById(R.id.progressTemperature);
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
     }
+
     private void restoreSavedData() {
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         feedAmount = sharedPreferences.getInt("feedAmount", 25);
         txtFeedAmount.setText(feedAmount + " kg");
-        tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
+        int tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
         progressTemperature.setProgress(tempThreshold);
         txtTempThreshold.setText("Temperature: " + tempThreshold + "°C");
     }
-    private void saveFeedLog(int amount) {
 
+    private void setupButtons() {
+        btnIncrease.setOnClickListener(v -> {
+            feedAmount += 1;
+            txtFeedAmount.setText(feedAmount + " kg");
+            sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+        });
+        btnDecrease.setOnClickListener(v -> {
+            if (feedAmount > 1) {
+                feedAmount -= 1;
+                txtFeedAmount.setText(feedAmount + " kg");
+                sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            }
+        });
+        btnFeedNow.setOnClickListener(v -> saveFeedLog(feedAmount));
+    }
+
+    private void saveFeedLog(int amount) {
+        // send command to device to feed
         sendBluetoothCommand("FEED:" + amount);
 
         String time = new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault()).format(new Date());
         long now = System.currentTimeMillis();
 
-        // Save in FeedFlowPrefs (history display)
+        // Save last feed in preferences
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putString("lastFeedTime", time);
         editor.putInt("lastFeedAmount", amount);
         editor.apply();
 
-        // Also save in FeedData (stats fragment)
+        // Update FeedData prefs for stats
         SharedPreferences statsPrefs = getSharedPreferences("FeedData", MODE_PRIVATE);
         SharedPreferences.Editor statsEditor = statsPrefs.edit();
 
@@ -118,7 +143,6 @@ public class HomeActivity extends AppCompatActivity {
         float totalFeed = statsPrefs.getFloat("totalFeed", 0f);
         int daysCount = statsPrefs.getInt("daysCount", 0);
 
-        // Reset if new day
         String lastDay = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date(now));
         String savedDay = statsPrefs.getString("lastDay", "");
         if (!lastDay.equals(savedDay)) {
@@ -169,27 +193,6 @@ public class HomeActivity extends AppCompatActivity {
                 Toast.makeText(this, "Failed to send feed command", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-    private void setupButtons() {
-        btnIncrease.setOnClickListener(v -> {
-            feedAmount += 1;
-            txtFeedAmount.setText(feedAmount + " kg");
-            sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
-        });
-        btnDecrease.setOnClickListener(v -> {
-            if (feedAmount > 1) {
-                feedAmount -= 1;
-                txtFeedAmount.setText(feedAmount + " kg");
-                sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
-            }
-        });
-        btnFeedNow.setOnClickListener(v -> saveFeedLog(feedAmount));
-    }
-
-    private void saveFeedingHistory() {
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("feedingHistory", String.join(";;", feedingHistory));
-        editor.apply();
     }
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
@@ -243,9 +246,8 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        // Load the device name from Firestore
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("settings").document("device") // Example: "settings" collection, "device" doc
+        // Load the device name from Firestore (expected doc: settings/device -> deviceName)
+        db.collection("settings").document("device")
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
@@ -260,13 +262,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private void startBluetoothScan(String targetDeviceName) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         if (btAdapter.isDiscovering()) {
@@ -302,7 +297,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         };
 
-        // Don't forget to register the receiver
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
     }
@@ -317,7 +311,7 @@ public class HomeActivity extends AppCompatActivity {
                 btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
                 btSocket.connect();
                 inputStream = btSocket.getInputStream();
-                outputStream = btSocket.getOutputStream(); // Add this line
+                outputStream = btSocket.getOutputStream();
                 connectedDeviceName = device.getName();
 
                 runOnUiThread(() -> {
@@ -326,6 +320,7 @@ public class HomeActivity extends AppCompatActivity {
                 });
 
                 listenForData();
+
             } catch (IOException e) {
                 runOnUiThread(() -> {
                     txtDeviceName.setText("Not Connected");
@@ -336,62 +331,82 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void listenForData() {
+        // We'll read the stream line-by-line. Ensure ESP32 ends lines with '\n' or '\r\n'.
         Handler handler = new Handler(getMainLooper());
-        byte[] buffer = new byte[1024];
-        int bytes;
 
-        while (true) {
+        new Thread(() -> {
             try {
-                if (inputStream.available() > 0) {
-                    bytes = inputStream.read(buffer);
-                    String data = new String(buffer, 0, bytes).trim();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+                String data;
+
+                while ((data = reader.readLine()) != null) {
+                    data = data.trim();
+                    if (data.isEmpty()) continue;
+
+                    // Expecting format: "27.5:85" (temp:feed)
+                    String fTemp = "";
+                    String fFeed = "";
 
                     if (data.contains(":")) {
                         String[] parts = data.split(":");
-                        String temp = parts[0];
-                        String feed = parts[1];
+                        if (parts.length >= 2) {
+                            fTemp = parts[0].trim();
+                            fFeed = parts[1].trim();
+                        } else {
+                            Log.w("BT_DATA", "Malformed line (has colon but not two parts): " + data);
+                            continue;
+                        }
+                    } else {
+                        // If no colon, ignore line OR treat as temp only (not expected for your chosen format)
+                        // For robustness, handle as temp-only and set feed to 0
+                        try {
+                            Double.parseDouble(data); // validate
+                            fTemp = data;
+                            fFeed = "0";
+                        } catch (NumberFormatException ex) {
+                            Log.w("BT_DATA", "Unrecognized data format: " + data);
+                            continue;
+                        }
+                    }
 
-                        String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                    final String finalTemp = fTemp;
+                    final String finalFeed = fFeed;
+                    final String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
-                        final String fTemp = temp;
-                        final String fFeed = feed;
-                        final String fTime = time;
+                    // Update UI and Firestore on main thread
+                    handler.post(() -> {
+                        // Update UI (water card)
+                        try {
+                            double currentTemp = Double.parseDouble(finalTemp);
+                            waterTemperature.setText(String.format(Locale.getDefault(), "%.1f °C", currentTemp));
+                            progressTemperature.setProgress((int) Math.round(currentTemp));
+                            txtWaterTempStatus(currentTemp);
 
-                        handler.post(() -> {
-                            // Update UI for Water Temperature Card
-                            try {
-                                double currentTemp = Double.parseDouble(fTemp);
+                        } catch (NumberFormatException e) {
+                            Log.e("BT_DATA", "Invalid temperature format: " + finalTemp);
+                        }
 
-                                // Update temperature TextView
-                                waterTemperature.setText(String.format("%.1f °C", currentTemp));
+                        // Update feed level UI
+                        txtFeedLevel.setText(finalFeed + "%");
 
-                                // Update ProgressBar
-                                progressTemperature.setProgress((int) currentTemp);
+                        // Update device info display
+                        txtDeviceName.setText(connectedDeviceName + "\nLast Updated: " + time);
 
-                                // Update status TextView if you added it
-                                txtWaterTempStatus(currentTemp);
+                        // Save to SharedPreferences
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("latestTemperature", finalTemp);
+                        editor.putString("latestFeedLevel", finalFeed);
+                        editor.putString("lastUpdatedTime", time);
+                        editor.apply();
 
-                            } catch (NumberFormatException e) {
-                                Log.e("BT_DATA", "Invalid temperature format: " + fTemp);
-                            }
+                        // Upload to Firestore with proper numeric types so Stats page reads numbers
+                        Map<String, Object> sensorData = new HashMap<>();
+                        try {
+                            double tempNumeric = Double.parseDouble(finalTemp);
+                            int feedNumeric = Integer.parseInt(finalFeed);
 
-                            // Update feed level TextView
-                            txtFeedLevel.setText(fFeed + "%");
-
-                            // Update device info
-                            txtDeviceName.setText(connectedDeviceName + "\nLast Updated: " + fTime);
-
-                            // Save latest values in SharedPreferences
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-                            editor.putString("latestTemperature", fTemp);
-                            editor.putString("latestFeedLevel", fFeed);
-                            editor.putString("lastUpdatedTime", fTime);
-                            editor.apply();
-
-                            // Upload to Firestore
-                            Map<String, Object> sensorData = new HashMap<>();
-                            sensorData.put("temperature", fTemp);
-                            sensorData.put("feedLevel", fFeed);
+                            sensorData.put("temperature", tempNumeric);
+                            sensorData.put("feedLevel", feedNumeric);
                             sensorData.put("timestamp", System.currentTimeMillis());
 
                             db.collection("FeedFlow")
@@ -402,13 +417,28 @@ public class HomeActivity extends AppCompatActivity {
                                             Log.d("FIRESTORE", "Data added with ID: " + documentReference.getId()))
                                     .addOnFailureListener(e ->
                                             Log.w("FIRESTORE", "Error adding document", e));
-                        });
-                    }
+
+                            // Also update top-level doc for quick reads (used in loadFeedLevelFromFirestore)
+                            Map<String, Object> topDoc = new HashMap<>();
+                            topDoc.put("temperature", tempNumeric);
+                            topDoc.put("feedLevel", feedNumeric);
+                            topDoc.put("timestamp", System.currentTimeMillis());
+
+                            db.collection("FeedFlow")
+                                    .document("Device001")
+                                    .set(topDoc)
+                                    .addOnSuccessListener(aVoid -> Log.d("FIRESTORE", "Top-level doc updated"))
+                                    .addOnFailureListener(e -> Log.w("FIRESTORE", "Top-level update failed", e));
+
+                        } catch (NumberFormatException nfe) {
+                            Log.e("BT_DATA", "Failed to parse numeric values for Firestore: temp=" + finalTemp + " feed=" + finalFeed);
+                        }
+                    });
                 }
             } catch (IOException e) {
-                break;
+                Log.e("BT", "Read failed", e);
             }
-        }
+        }).start();
     }
 
     private void loadFeedLevelFromFirestore() {
@@ -423,21 +453,28 @@ public class HomeActivity extends AppCompatActivity {
                         // Temperature
                         Double temp = snapshot.getDouble("temperature");
                         if (temp != null) {
-                            txtTemperature.setText(temp + "°C");
-                            waterTemperature.setText(String.format("%.1f °C", temp));
+                            txtTemperature.setText(String.format(Locale.getDefault(), "%.1f°C", temp));
+                            waterTemperature.setText(String.format(Locale.getDefault(), "%.1f °C", temp));
                             progressTemperature.setProgress(temp.intValue());
-                            txtWaterTempStatus(temp); // <-- update status TextView
+                            txtWaterTempStatus(temp);
                         }
                         // Feed Level (weight)
                         Double weight = snapshot.getDouble("weight");
                         if (weight != null) {
                             txtFeedLevel.setText(String.format(Locale.getDefault(), "%.2f kg", weight));
                             updateFeedLevelStatus(weight);
+                        } else {
+                            // If feedLevel numeric exists (percentage), show that
+                            Long feedPercent = snapshot.getLong("feedLevel");
+                            if (feedPercent != null) {
+                                txtFeedLevel.setText(feedPercent + "%");
+                                // Optionally also update feed level status by mapping percent -> kg or thresholds
+                            }
                         }
                     }
                 });
+    }
 
-        }
     private void txtWaterTempStatus(double temp) {
         if (txtWaterTempStatus == null) return;
         if (temp >= 26 && temp <= 30) {
@@ -454,10 +491,11 @@ public class HomeActivity extends AppCompatActivity {
             txtWaterTempStatus.setTextColor(Color.parseColor("#007BFF")); // blue
         }
     }
+
     private void updateFeedLevelStatus(double feedLevel) {
         if (txtFeedLevelStatus == null) return;
 
-        if (feedLevel>= 5) {
+        if (feedLevel >= 5) {
             txtFeedLevelStatus.setText("Sufficient");
             txtFeedLevelStatus.setTextColor(Color.parseColor("#28A745")); // green
         } else if (feedLevel >= 2) {
@@ -468,8 +506,4 @@ public class HomeActivity extends AppCompatActivity {
             txtFeedLevelStatus.setTextColor(Color.parseColor("#DC3545")); // red
         }
     }
-
-
-
-
 }
