@@ -55,6 +55,7 @@ public class DeviceSetUpActivity extends AppCompatActivity {
                     }, 1);
         }
 
+        // Enable Bluetooth if not already
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -62,17 +63,30 @@ public class DeviceSetUpActivity extends AppCompatActivity {
             loadPairedDevices();
         }
 
+        // Cancel button closes the activity
         cancelButton.setOnClickListener(v -> finish());
-        confirmButton.setOnClickListener(v ->{
-            Intent intent = new Intent(DeviceSetUpActivity.this,HomeActivity.class);
-            startActivity(intent);
+
+        // Confirm button checks if ESP32 is selected
+        confirmButton.setOnClickListener(v -> {
+            String selectedDevice = (String) deviceSpinner.getSelectedItem();
+
+            if (selectedDevice != null && selectedDevice.contains("ESP32")) {
+                // Device is ESP32 → proceed
+                Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
+                startActivity(intent);
+            } else {
+                // Not ESP32 → show warning
+                Toast.makeText(DeviceSetUpActivity.this, "Connect Your ESP32", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
+    // Load paired devices into spinner
     private void loadPairedDevices() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         ArrayList<String> deviceNames = new ArrayList<>();
 
