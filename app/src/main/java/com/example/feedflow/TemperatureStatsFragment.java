@@ -79,15 +79,15 @@ public class TemperatureStatsFragment extends Fragment {
         connectToEsp32();
     }
 
-    // -------------------------
-    // 🔹 Load Firestore readings
-    // -------------------------
+    // ------------------------------------------------------------
+    // 🔹 Load the SAME temperature stored by the Water Temperature card
+    // ------------------------------------------------------------
     private void fetchTemperatureTrends() {
         db.collection("FeedFlow")
                 .document("Device001")
                 .collection("readings")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(20)
+                .limit(30)
                 .get()
                 .addOnSuccessListener(querySnapshots -> {
                     ArrayList<Entry> entries = new ArrayList<>();
@@ -110,20 +110,15 @@ public class TemperatureStatsFragment extends Fragment {
                 .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to load chart", e));
     }
 
-    // -------------------------
-    // 🔹 Update MPAndroidChart
-    // -------------------------
     private void updateLineChart(ArrayList<Entry> entries) {
         LineDataSet dataSet = new LineDataSet(entries, "Sea Water Temp (°C)");
 
-        dataSet.setColor(Color.BLUE); // or use a resource
         dataSet.setColor(Color.RED);
-
         dataSet.setLineWidth(2f);
         dataSet.setCircleRadius(4f);
         dataSet.setValueTextSize(10f);
-        LineData lineData = new LineData(dataSet);
-        tempLineChart.setData(lineData);
+
+        tempLineChart.setData(new LineData(dataSet));
 
         Description desc = new Description();
         desc.setText("Sea Water Temperature Trends");
@@ -132,10 +127,9 @@ public class TemperatureStatsFragment extends Fragment {
         tempLineChart.invalidate();
     }
 
-
-    // -------------------------
+    // ------------------------------------------------------------
     // 🔹 Temperature statistics
-    // -------------------------
+    // ------------------------------------------------------------
     private void updateStatsUI() {
         if (tempHistory.isEmpty()) return;
 
@@ -162,13 +156,13 @@ public class TemperatureStatsFragment extends Fragment {
 
         tvTempCurrent.setText(
                 String.format("Current: %.2f°C",
-                        tempHistory.get(tempHistory.size() - 1))
+                        tempHistory.get(0))  // MOST RECENT
         );
     }
 
-    // -------------------------
-    // 🔹 Bluetooth
-    // -------------------------
+    // ------------------------------------------------------------
+    // 🔹 Bluetooth: Reads SAME VALUE used by Water Temp Card
+    // ------------------------------------------------------------
     private void connectToEsp32() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) return;
@@ -186,8 +180,7 @@ public class TemperatureStatsFragment extends Fragment {
         for (BluetoothDevice device : bluetoothAdapter.getBondedDevices()) {
             if ("ESP32_Test".equals(device.getName())) {
                 try {
-                    bluetoothSocket =
-                            device.createRfcommSocketToServiceRecord(MY_UUID);
+                    bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
                     bluetoothSocket.connect();
                     startReadingBluetooth();
                 } catch (IOException e) {
@@ -205,18 +198,22 @@ public class TemperatureStatsFragment extends Fragment {
                 String line;
 
                 while ((line = reader.readLine()) != null) {
-                    try {
-                        double temp = Double.parseDouble(line);
 
-                        requireActivity().runOnUiThread(() -> {
-                            tempHistory.add(temp);
-                            if (tempHistory.size() > 50) tempHistory.remove(0);
+                    // 🔥 New parsing: extract temperature only from "temp:feed"
+                    String[] parts = line.split(":");
+                    if (parts.length >= 1) {
+                        try {
+                            double waterTemp = Double.parseDouble(parts[0]); // ONLY FIRST VALUE
 
-                            updateStatsUI();
-                            saveTemperature(temp);
-                        });
+                            requireActivity().runOnUiThread(() -> {
+                                tempHistory.add(0, waterTemp);
+                                if (tempHistory.size() > 50) tempHistory.remove(tempHistory.size() - 1);
 
-                    } catch (Exception ignored) {
+                                updateStatsUI();
+                                saveTemperature(waterTemp);
+                            });
+
+                        } catch (Exception ignored) {}
                     }
                 }
             } catch (IOException e) {
@@ -225,9 +222,9 @@ public class TemperatureStatsFragment extends Fragment {
         }).start();
     }
 
-    // -------------------------
-    // 🔹 Save to Firestore
-    // -------------------------
+    // ------------------------------------------------------------
+    // 🔹 Save SAME temperature value to Firestore
+    // ------------------------------------------------------------
     private void saveTemperature(double temp) {
         db.collection("FeedFlow")
                 .document("Device001")
@@ -242,7 +239,6 @@ public class TemperatureStatsFragment extends Fragment {
         public long timestamp;
 
         TempReading() {}
-
         TempReading(double temp, long ts) {
             this.temperature = temp;
             this.timestamp = ts;
