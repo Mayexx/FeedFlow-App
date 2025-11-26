@@ -16,37 +16,34 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class HomeActivity extends AppCompatActivity {
 
-    // -------------------- FIREBASE --------------------
+    // Firebase
     private FirebaseFirestore db;
 
-    // -------------------- UI ELEMENTS --------------------
+    // UI Elements
     private TextView txtTemperature, txtFeedLevel, txtFeedAmount;
     private TextView waterTemperature, txtWaterTempStatus, txtFeedLevelStatus, txtDeviceName;
     private ProgressBar progressTemperature;
     private Button btnFeedNow, btnIncrease, btnDecrease;
 
-    // -------------------- BLUETOOTH --------------------
+    // Bluetooth
     private BluetoothAdapter btAdapter;
     private BluetoothSocket btSocket;
     private InputStream inputStream;
@@ -54,14 +51,13 @@ public class HomeActivity extends AppCompatActivity {
     private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private String connectedDeviceName = "Not Connected";
 
-    // -------------------- APP DATA --------------------
+    // App Data
     private SharedPreferences sharedPreferences;
     private static final String PREF_NAME = "FeedFlowPrefs";
     private int feedAmount = 25;
     private int tempThreshold = 28;
     private List<String> feedingHistory = new ArrayList<>();
 
-    // -------------------- LIFECYCLE --------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,7 +73,6 @@ public class HomeActivity extends AppCompatActivity {
         loadFeedLevelFromFirestore();
     }
 
-    // -------------------- INITIALIZATION --------------------
     private void initViews() {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
@@ -89,18 +84,16 @@ public class HomeActivity extends AppCompatActivity {
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
-        txtDeviceName = findViewById(R.id.txtDeviceName);
+        txtDeviceName = findViewById(R.id.txtDeviceName); // new TextView for connected device
     }
 
     private void restoreSavedData() {
         sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         feedAmount = sharedPreferences.getInt("feedAmount", 25);
         txtFeedAmount.setText(feedAmount + " kg");
-
         tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
         progressTemperature.setProgress(tempThreshold);
         txtTemperature.setText("Temperature: " + tempThreshold + "°C");
-
         txtDeviceName.setText("Not Connected");
     }
 
@@ -143,7 +136,6 @@ public class HomeActivity extends AppCompatActivity {
 
         String lastDay = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date(now));
         String savedDay = statsPrefs.getString("lastDay", "");
-
         if (!lastDay.equals(savedDay)) {
             todayFeed = 0f;
             daysCount++;
@@ -191,6 +183,7 @@ public class HomeActivity extends AppCompatActivity {
     // -------------------- BLUETOOTH --------------------
     private void initBluetooth() {
         btAdapter = BluetoothAdapter.getDefaultAdapter();
+
         if (btAdapter == null) {
             Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_LONG).show();
             return;
@@ -224,7 +217,9 @@ public class HomeActivity extends AppCompatActivity {
     private void connectToDevice(BluetoothDevice device) {
         new Thread(() -> {
             try {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return;
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
 
                 btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
                 btSocket.connect();
@@ -238,6 +233,7 @@ public class HomeActivity extends AppCompatActivity {
                 });
 
                 listenForData();
+
             } catch (IOException e) {
                 runOnUiThread(() -> {
                     txtDeviceName.setText("Not Connected");
@@ -268,8 +264,7 @@ public class HomeActivity extends AppCompatActivity {
                             handler.post(() -> updateUI(tempStr, feedStr, time));
                         }
                     }
-                    Thread.sleep(200);
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     break;
                 }
@@ -277,62 +272,43 @@ public class HomeActivity extends AppCompatActivity {
         }).start();
     }
 
-    // -------------------- UPDATE UI & FIRESTORE --------------------
     private void updateUI(String tempStr, String feedStr, String time) {
-        double temp, feedLevel;
-
+        double temp = 0;
         try {
             temp = Double.parseDouble(tempStr);
-            feedLevel = Double.parseDouble(feedStr);
+            waterTemperature.setText(String.format("%.1f °C", temp));
+            progressTemperature.setProgress((int) temp);
+            updateTempStatus(temp);
         } catch (NumberFormatException e) {
-            Log.e("BT_DATA", "Invalid data: " + tempStr + ", " + feedStr);
-            return;
+            Log.e("BT_DATA", "Invalid temperature: " + tempStr);
         }
 
-        // Update UI
-        waterTemperature.setText(String.format("%.1f °C", temp));
-        progressTemperature.setProgress((int) temp);
-        txtFeedLevel.setText(feedLevel + "%");
-        updateTempStatus(temp);
-        updateFeedLevelStatus(feedLevel);
+        txtFeedLevel.setText(feedStr + "%");
+        updateFeedLevelStatus(Double.parseDouble(feedStr));
+
         txtDeviceName.setText("Connected to: " + connectedDeviceName + "\nLast Updated: " + time);
 
-        // Save locally
         sharedPreferences.edit()
                 .putString("latestTemperature", tempStr)
                 .putString("latestFeedLevel", feedStr)
                 .putString("lastUpdatedTime", time)
                 .apply();
 
-        // 1️⃣ Add to readings subcollection (history)
         Map<String, Object> sensorData = new HashMap<>();
-        sensorData.put("temperature", temp);
-        sensorData.put("feedLevel", feedLevel);
+        sensorData.put("temperature", tempStr);
+        sensorData.put("feedLevel", feedStr);
         sensorData.put("timestamp", System.currentTimeMillis());
 
         db.collection("FeedFlow")
                 .document("Device001")
                 .collection("readings")
                 .add(sensorData)
-                .addOnSuccessListener(docRef -> Log.d("FIRESTORE", "Bluetooth data added to readings"))
+                .addOnSuccessListener(docRef -> Log.d("FIRESTORE", "Data added"))
                 .addOnFailureListener(e -> Log.e("FIRESTORE", "Error adding data", e));
-
-        // 2️⃣ Update main document with latest values (real-time)
-        Map<String, Object> latestData = new HashMap<>();
-        latestData.put("temperature", temp);
-        latestData.put("feedLevel", feedLevel);
-        latestData.put("lastUpdated", System.currentTimeMillis());
-
-        db.collection("FeedFlow")
-                .document("Device001")
-                .set(latestData, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> Log.d("FIRESTORE", "Device001 latest values updated"))
-                .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to update Device001", e));
     }
 
     private void updateTempStatus(double temp) {
         if (txtWaterTempStatus == null) return;
-
         if (temp >= 26 && temp <= 30) {
             txtWaterTempStatus.setText("Optimal");
             txtWaterTempStatus.setTextColor(Color.parseColor("#28A745"));
@@ -350,7 +326,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private void updateFeedLevelStatus(double feedLevel) {
         if (txtFeedLevelStatus == null) return;
-
         if (feedLevel >= 5) {
             txtFeedLevelStatus.setText("Sufficient");
             txtFeedLevelStatus.setTextColor(Color.parseColor("#28A745"));
@@ -363,7 +338,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    // -------------------- FIRESTORE LISTENER --------------------
     private void loadFeedLevelFromFirestore() {
         db.collection("FeedFlow")
                 .document("Device001")
@@ -381,16 +355,15 @@ public class HomeActivity extends AppCompatActivity {
                             updateTempStatus(temp);
                         }
 
-                        Double weight = snapshot.getDouble("feedLevel");
+                        Double weight = snapshot.getDouble("weight");
                         if (weight != null) {
-                            txtFeedLevel.setText(String.format(Locale.getDefault(), "%.2f %%", weight));
+                            txtFeedLevel.setText(String.format(Locale.getDefault(), "%.2f kg", weight));
                             updateFeedLevelStatus(weight);
                         }
                     }
                 });
     }
 
-    // -------------------- BOTTOM NAVIGATION --------------------
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
         bottomNav.setSelectedItemId(R.id.nav_home);
 
