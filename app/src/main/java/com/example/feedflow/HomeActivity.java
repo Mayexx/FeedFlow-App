@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +29,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
 
-    private String connectedDeviceAddress = "XX:XX:XX:XX:XX:XX"; // Replace with your ESP32 MAC
     private String connectedDeviceName = "ESP32";
 
     private final String CHANNEL_ID = "alerts_channel";
@@ -51,19 +51,25 @@ public class HomeActivity extends AppCompatActivity {
         serialBT = new BluetoothSerial(this);
 
         new Thread(() -> {
-            serialBT.connect(connectedDeviceAddress); // blocking in background thread
+            try {
+                String connectedDeviceAddress = "";
+                serialBT.connect(connectedDeviceAddress); // blocking
 
-            runOnUiThread(() -> {
-                // Once connected, set the callback and update UI
-                serialBT.setCallbacks(data -> {
-                    String received = new String(data).trim();
-                    runOnUiThread(() -> parseAndUpdateUI(received));
+                runOnUiThread(() -> {
+                    serialBT.setCallbacks(data -> {
+                        String received = new String(data).trim();
+                        runOnUiThread(() -> parseAndUpdateUI(received));
+                    });
+
+                    Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
                 });
-
-                // Optionally show a toast
-                Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
-            });
+            } catch (Exception e) {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Failed to connect: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+            }
         }).start();
+
 
         // Notification channel
         createNotificationChannel();
@@ -136,7 +142,7 @@ public class HomeActivity extends AppCompatActivity {
         latestData.put("lastUpdated", System.currentTimeMillis());
 
         db.collection("FeedFlow").document("Device001")
-                .set(latestData, com.google.firebase.firestore.SetOptions.merge())
+                .set(latestData, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> Log.d("FIRESTORE", "Latest values updated"))
                 .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to update", e));
     }
