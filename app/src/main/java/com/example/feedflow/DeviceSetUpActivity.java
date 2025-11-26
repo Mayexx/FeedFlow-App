@@ -55,6 +55,7 @@ public class DeviceSetUpActivity extends AppCompatActivity {
                     }, 1);
         }
 
+        // Enable Bluetooth if not already
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -62,41 +63,30 @@ public class DeviceSetUpActivity extends AppCompatActivity {
             loadPairedDevices();
         }
 
+        // Cancel button closes the activity
         cancelButton.setOnClickListener(v -> finish());
+
+        // Confirm button checks if ESP32 is selected
         confirmButton.setOnClickListener(v -> {
-            String selectedItem = deviceSpinner.getSelectedItem().toString();
+            String selectedDevice = (String) deviceSpinner.getSelectedItem();
 
-            // If no paired devices
-            if (selectedItem.equals("No paired devices")) {
-                Toast.makeText(this, "No ESP32 device selected.", Toast.LENGTH_SHORT).show();
-                return;
+            if (selectedDevice != null && selectedDevice.contains("ESP32")) {
+                // Device is ESP32 → proceed
+                Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
+                startActivity(intent);
+            } else {
+                // Not ESP32 → show warning
+                Toast.makeText(DeviceSetUpActivity.this, "Connect Your ESP32", Toast.LENGTH_SHORT).show();
             }
-
-            // Extract MAC address from "DeviceName (AA:BB:CC:DD:EE:FF)"
-            String mac = "";
-            if (selectedItem.contains("(") && selectedItem.contains(")")) {
-                mac = selectedItem.substring(
-                        selectedItem.indexOf("(") + 1,
-                        selectedItem.indexOf(")")
-                );
-            }
-
-            if (mac.isEmpty()) {
-                Toast.makeText(this, "Invalid device format", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Go to HomeActivity with MAC
-            Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
-            intent.putExtra("DEVICE_MAC", mac);
-            startActivity(intent);
         });
     }
 
+    // Load paired devices into spinner
     private void loadPairedDevices() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         ArrayList<String> deviceNames = new ArrayList<>();
 
