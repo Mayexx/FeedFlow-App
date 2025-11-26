@@ -1,104 +1,112 @@
 package com.example.feedflow;
 
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
 
 public class DeviceSetUpActivity extends AppCompatActivity {
 
-    private BluetoothAdapter bluetoothAdapter;
-    private Spinner deviceSpinner;
-    private ArrayAdapter<String> deviceListAdapter;
-    private final int REQUEST_ENABLE_BT = 100;
+    private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1;
+    private BluetoothSerial serialBT;
+    private String connectedDeviceAddress;
+    private String connectedDeviceName;
 
-    @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_devicesetup);
 
-        deviceSpinner = findViewById(R.id.deviceSpinner);
-        Button cancelButton = findViewById(R.id.cancelButton);
+        Spinner deviceSpinner = findViewById(R.id.deviceSpinner);
         Button confirmButton = findViewById(R.id.confirmButton);
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        serialBT = new BluetoothSerial(this);
 
-        // Check if Bluetooth is supported
-        if (bluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
+        // 🔹 Dummy list for deviceSpinner (replace with scanned devices if you implement scanning)
+        List<String> devices = new ArrayList<>();
+        devices.add("Select Device");
+        devices.add("ESP32_Device_1 - AA:BB:CC:DD:EE:FF"); // Example MAC
+        devices.add("ESP32_Device_2 - 11:22:33:44:55:66");
 
-        // Request permissions for Android 12+
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{
-                            Manifest.permission.BLUETOOTH_CONNECT,
-                            Manifest.permission.BLUETOOTH_SCAN
-                    }, 1);
-        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, devices);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        deviceSpinner.setAdapter(adapter);
 
-        // Enable Bluetooth if not already
-        if (!bluetoothAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        } else {
-            loadPairedDevices();
-        }
-
-        // Cancel button closes the activity
-        cancelButton.setOnClickListener(v -> finish());
-
-        // Confirm button checks if ESP32 is selected
         confirmButton.setOnClickListener(v -> {
-            String selectedDevice = (String) deviceSpinner.getSelectedItem();
+            String selected = (String) deviceSpinner.getSelectedItem();
 
-            if (selectedDevice != null && selectedDevice.contains("ESP32")) {
-                // Device is ESP32 → proceed
-                Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
-                startActivity(intent);
-            } else {
-                // Not ESP32 → show warning
-                Toast.makeText(DeviceSetUpActivity.this, "Connect Your ESP32", Toast.LENGTH_SHORT).show();
+            if (selected == null || selected.equals("Select Device")) {
+                Toast.makeText(this, "Please select a device", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            // Extract MAC address from spinner string
+            if (selected.contains("-")) {
+                String[] parts = selected.split("-");
+                connectedDeviceName = parts[0].trim();
+                connectedDeviceAddress = parts[1].trim();
+            } else {
+                Toast.makeText(this, "Invalid device format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 🔹 Check Bluetooth permission
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                        REQUEST_BLUETOOTH_PERMISSIONS);
+                return;
+            }
+
+            // 🔹 Connect to ESP32 in a background thread
+            new Thread(() -> {
+                try {
+                    serialBT.connect(connectedDeviceAddress); // blocking call
+
+                    // Success → navigate to HomeActivity on UI thread
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
+                        startActivity(intent);
+                        finish();
+                    });
+
+                } catch (Exception e) {
+                    Log.e("BT_CONNECT", "Connection failed", e);
+                    runOnUiThread(() ->
+                            Toast.makeText(DeviceSetUpActivity.this, "Bluetooth connection failed", Toast.LENGTH_SHORT).show()
+                    );
+                }
+            }).start();
         });
     }
 
-    // Load paired devices into spinner
-    private void loadPairedDevices() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
+    // 🔹 Handle permission request
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        ArrayList<String> deviceNames = new ArrayList<>();
-
-        if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-                deviceNames.add(device.getName() + " (" + device.getAddress() + ")");
+        if (requestCode == REQUEST_BLUETOOTH_PERMISSIONS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission granted. Press confirm again.", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Bluetooth permission denied!", Toast.LENGTH_SHORT).show();
             }
-        } else {
-            deviceNames.add("No paired devices");
         }
-
-        deviceListAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, deviceNames);
-        deviceSpinner.setAdapter(deviceListAdapter);
     }
 }
