@@ -18,7 +18,7 @@ public class BluetoothSetUpActivity extends AppCompatActivity {
         buttonSetup = findViewById(R.id.buttonSetup);
 
         buttonSetup.setOnClickListener(v -> {
-            Toast.makeText(this, "Button clicked!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "", Toast.LENGTH_SHORT).show();
 
             // Start the ConnectDeviceActivity
             Intent intent = new Intent(BluetoothSetUpActivity.this, DeviceSetUpActivity.class);

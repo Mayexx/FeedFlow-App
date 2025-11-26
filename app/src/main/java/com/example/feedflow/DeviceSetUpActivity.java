@@ -63,8 +63,32 @@ public class DeviceSetUpActivity extends AppCompatActivity {
         }
 
         cancelButton.setOnClickListener(v -> finish());
-        confirmButton.setOnClickListener(v ->{
-            Intent intent = new Intent(DeviceSetUpActivity.this,HomeActivity.class);
+        confirmButton.setOnClickListener(v -> {
+            String selectedItem = deviceSpinner.getSelectedItem().toString();
+
+            // If no paired devices
+            if (selectedItem.equals("No paired devices")) {
+                Toast.makeText(this, "No ESP32 device selected.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Extract MAC address from "DeviceName (AA:BB:CC:DD:EE:FF)"
+            String mac = "";
+            if (selectedItem.contains("(") && selectedItem.contains(")")) {
+                mac = selectedItem.substring(
+                        selectedItem.indexOf("(") + 1,
+                        selectedItem.indexOf(")")
+                );
+            }
+
+            if (mac.isEmpty()) {
+                Toast.makeText(this, "Invalid device format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Go to HomeActivity with MAC
+            Intent intent = new Intent(DeviceSetUpActivity.this, HomeActivity.class);
+            intent.putExtra("DEVICE_MAC", mac);
             startActivity(intent);
         });
     }
