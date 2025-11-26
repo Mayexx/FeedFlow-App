@@ -198,7 +198,7 @@ public class HomeActivity extends AppCompatActivity {
         String macAddress = getIntent().getStringExtra("DEVICE_MAC");
         if (macAddress == null || macAddress.isEmpty()) {
             Toast.makeText(this, "No device found", Toast.LENGTH_LONG).show();
-            txtDeviceName.setText("No Device Selected");
+            txtDeviceName.setText("No Device Connected");
             return;
         }
 
@@ -208,11 +208,9 @@ public class HomeActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 200);
             return;
         }
-
         BluetoothDevice device = btAdapter.getRemoteDevice(macAddress);
         connectToDevice(device);
     }
-
     @SuppressLint("SetTextI18n")
     private void connectToDevice(BluetoothDevice device) {
         new Thread(() -> {
@@ -220,7 +218,6 @@ public class HomeActivity extends AppCompatActivity {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     return;
                 }
-
                 btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
                 btSocket.connect();
                 inputStream = btSocket.getInputStream();
@@ -231,9 +228,7 @@ public class HomeActivity extends AppCompatActivity {
                     txtDeviceName.setText("Connected to: " + connectedDeviceName + "\nWaiting for data...");
                     Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
                 });
-
                 listenForData();
-
             } catch (IOException e) {
                 runOnUiThread(() -> {
                     txtDeviceName.setText("Not Connected");
@@ -375,7 +370,6 @@ public class HomeActivity extends AppCompatActivity {
                             progressTemperature.setProgress(temp.intValue());
                             updateTempStatus(temp);
                         }
-
                         Double weight = snapshot.getDouble("weight");
                         if (weight != null) {
                             txtFeedLevel.setText(String.format(Locale.getDefault(), "%.2f kg", weight));

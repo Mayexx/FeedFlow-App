@@ -45,4 +45,5 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     // 🔹 MPAndroidChart for temperature trends
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation ("com.google.firebase:firebase-messaging:23.3.0")
 }
