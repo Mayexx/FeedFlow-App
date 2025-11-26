@@ -161,7 +161,7 @@ public class FeedingStatsFragment extends Fragment {
                             else if (part.startsWith("REMAIN:")) remaining = Double.parseDouble(part.replace("REMAIN:", ""));
                         }
 
-                        double finalDispensed = dispensed;
+                         double finalDispensed = dispensed;
                         double finalRemaining = remaining;
 
                         requireActivity().runOnUiThread(() -> {
