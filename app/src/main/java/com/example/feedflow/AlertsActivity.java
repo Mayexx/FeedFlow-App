@@ -39,9 +39,6 @@ public class AlertsActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         alertsRef = db.collection("FeedFlow").document("Device001").collection("alerts");
 
-        // 🔹 Example: add sample alerts (run only once or when triggered by logic)
-        addSampleAlerts();
-
         // 🔹 Fetch alerts in real-time
         fetchAlerts();
 
@@ -84,23 +81,6 @@ public class AlertsActivity extends AppCompatActivity {
         });
     }
     // 🔹 Method to add a new alert into Firestore (example only)
-    private void addSampleAlerts() {
-        // Create a map
-        Map<String, Object> alert1 = new HashMap<>();
-        alert1.put("title", "High Water Temperature");
-        alert1.put("description", "Water temperature in Pond #1 is 32°C. Optimal range is 25–30°C.");
-        alert1.put("time", "7:32 AM");
-        alert1.put("status", "Warning");
-
-        Map<String, Object> alert2 = new HashMap<>();
-        alert2.put("title", "Low Feed Level");
-        alert2.put("description", "Feed storage level is below 20%. Estimated to last 3 more days.");
-        alert2.put("time", "9:45 AM");
-        alert2.put("status", "Warning");
-
-        alertsRef.add(alert1);
-        alertsRef.add(alert2);
-    }
 
     // Fetch alerts from Firestore in real-time
     private void fetchAlerts() {

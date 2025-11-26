@@ -38,11 +38,10 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseFirestore db;
 
     // UI Elements
-    private TextView txtTemperature, txtFeedLevel, txtFeedAmount, txtDeviceName;
-    private TextView waterTemperature, txtWaterTempStatus, txtFeedLevelStatus;
+    private TextView txtTemperature, txtFeedLevel, txtFeedAmount;
+    private TextView waterTemperature, txtWaterTempStatus, txtFeedLevelStatus, txtDeviceName;
     private ProgressBar progressTemperature;
     private Button btnFeedNow, btnIncrease, btnDecrease;
-    private TextView txtDeviceMac;
 
     // Bluetooth
     private BluetoothAdapter btAdapter;
@@ -78,7 +77,6 @@ public class HomeActivity extends AppCompatActivity {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
         txtFeedAmount = findViewById(R.id.txtFeedAmount);
-        txtDeviceMac = findViewById(R.id.txtDeviceMac);
         waterTemperature = findViewById(R.id.waterTemperature);
         txtWaterTempStatus = findViewById(R.id.txtWaterTempStatus);
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
@@ -86,6 +84,7 @@ public class HomeActivity extends AppCompatActivity {
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
+        txtDeviceName = findViewById(R.id.txtDeviceName); // new TextView for connected device
     }
 
     private void restoreSavedData() {
@@ -95,6 +94,7 @@ public class HomeActivity extends AppCompatActivity {
         tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
         progressTemperature.setProgress(tempThreshold);
         txtTemperature.setText("Temperature: " + tempThreshold + "°C");
+        txtDeviceName.setText(connectedDeviceName);
     }
 
     // -------------------- FEEDING --------------------
@@ -122,13 +122,11 @@ public class HomeActivity extends AppCompatActivity {
         String time = new SimpleDateFormat("MMM dd, hh:mm a", Locale.getDefault()).format(new Date());
         long now = System.currentTimeMillis();
 
-        // Save locally
         sharedPreferences.edit()
                 .putString("lastFeedTime", time)
                 .putInt("lastFeedAmount", amount)
                 .apply();
 
-        // Save stats
         SharedPreferences statsPrefs = getSharedPreferences("FeedData", MODE_PRIVATE);
         SharedPreferences.Editor statsEditor = statsPrefs.edit();
 
@@ -136,7 +134,6 @@ public class HomeActivity extends AppCompatActivity {
         float totalFeed = statsPrefs.getFloat("totalFeed", 0f);
         int daysCount = statsPrefs.getInt("daysCount", 0);
 
-        // Reset daily feed if new day
         String lastDay = new SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(new Date(now));
         String savedDay = statsPrefs.getString("lastDay", "");
         if (!lastDay.equals(savedDay)) {
@@ -154,7 +151,6 @@ public class HomeActivity extends AppCompatActivity {
         statsEditor.putLong("lastUpdated", now);
         statsEditor.apply();
 
-        // Save to Firestore
         Map<String, Object> feedLog = new HashMap<>();
         feedLog.put("amount", amount);
         feedLog.put("time", time);
@@ -201,12 +197,12 @@ public class HomeActivity extends AppCompatActivity {
 
         String macAddress = getIntent().getStringExtra("DEVICE_MAC");
         if (macAddress == null || macAddress.isEmpty()) {
-            Toast.makeText(this, "No device MAC found", Toast.LENGTH_LONG).show();
-            txtDeviceMac.setText("No Device Selected");
+            Toast.makeText(this, "No device found", Toast.LENGTH_LONG).show();
+            txtDeviceName.setText("No Device Selected");
             return;
         }
 
-        txtDeviceMac.setText("Connecting: " + macAddress);
+        txtDeviceName.setText("Connecting: " + connectedDeviceName);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 200);
@@ -222,15 +218,9 @@ public class HomeActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
+
                 btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
                 btSocket.connect();
                 inputStream = btSocket.getInputStream();
@@ -238,7 +228,7 @@ public class HomeActivity extends AppCompatActivity {
                 connectedDeviceName = device.getName();
 
                 runOnUiThread(() -> {
-                    txtDeviceMac.setText(connectedDeviceName + "\nLast Updated: Waiting for data...");
+                    txtDeviceName.setText("Connected to: " + connectedDeviceName + "\nWaiting for data...");
                     Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
                 });
 
@@ -246,7 +236,7 @@ public class HomeActivity extends AppCompatActivity {
 
             } catch (IOException e) {
                 runOnUiThread(() -> {
-                    txtDeviceMac.setText("Not Connected");
+                    txtDeviceName.setText("Not Connected");
                     Toast.makeText(this, "Connection failed", Toast.LENGTH_SHORT).show();
                 });
                 Log.e("BT_CONNECT", "Connection failed", e);
@@ -265,14 +255,12 @@ public class HomeActivity extends AppCompatActivity {
                         int bytes = inputStream.read(buffer);
                         String data = new String(buffer, 0, bytes).trim();
 
-                        // Parse data
                         if (data.contains(":")) {
                             String[] parts = data.split(":");
                             String tempStr = parts[0];
                             String feedStr = parts[1];
                             String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
 
-                            // Update UI
                             handler.post(() -> updateUI(tempStr, feedStr, time));
                         }
                     }
@@ -285,48 +273,61 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void updateUI(String tempStr, String feedStr, String time) {
+        double temp = 0;
+        double feedLevel = 0;
+
         try {
-            double temp = Double.parseDouble(tempStr);
-
-            // Update temperature
-            waterTemperature.setText(String.format("%.1f °C", temp));
-            progressTemperature.setProgress((int) temp);
-            updateTempStatus(temp);
-
+            temp = Double.parseDouble(tempStr);
+            feedLevel = Double.parseDouble(feedStr);
         } catch (NumberFormatException e) {
-            Log.e("BT_DATA", "Invalid temperature: " + tempStr);
+            Log.e("BT_DATA", "Invalid data: " + tempStr + ", " + feedStr);
+            return;
         }
 
-        // Update feed level
-        txtFeedLevel.setText(feedStr + "%");
-        updateFeedLevelStatus(Double.parseDouble(feedStr));
+        // Update UI
+        waterTemperature.setText(String.format("%.1f °C", temp));
+        progressTemperature.setProgress((int) temp);
+        txtFeedLevel.setText(feedLevel + "%");
 
-        // Update device info
-        txtDeviceMac.setText(connectedDeviceName + "\nLast Updated: " + time);
+        updateTempStatus(temp);
+        updateFeedLevelStatus(feedLevel);
 
-        // Save latest values locally
+        txtDeviceName.setText("Connected to: " + connectedDeviceName + "\nLast Updated: " + time);
+
+        // Save locally
         sharedPreferences.edit()
                 .putString("latestTemperature", tempStr)
                 .putString("latestFeedLevel", feedStr)
                 .putString("lastUpdatedTime", time)
                 .apply();
 
-        // Optional: Upload to Firestore
+        // Prepare data for Firestore
         Map<String, Object> sensorData = new HashMap<>();
-        sensorData.put("temperature", tempStr);
-        sensorData.put("feedLevel", feedStr);
+        sensorData.put("temperature", temp);
+        sensorData.put("feedLevel", feedLevel);
         sensorData.put("timestamp", System.currentTimeMillis());
 
+        // 1️⃣ Add to 'readings' subcollection (history)
         db.collection("FeedFlow")
                 .document("Device001")
                 .collection("readings")
                 .add(sensorData)
-                .addOnSuccessListener(docRef -> Log.d("FIRESTORE", "Data added"))
-                .addOnFailureListener(e -> Log.e("FIRESTORE", "Error adding data", e));
+                .addOnSuccessListener(docRef -> Log.d("FIRESTORE", "Bluetooth data added to readings"))
+                .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to add data to readings", e));
+
+        // 2️⃣ Update main document with latest values (real-time)
+        Map<String, Object> latestData = new HashMap<>();
+        latestData.put("temperature", temp);
+        latestData.put("feedLevel", feedLevel);
+        latestData.put("lastUpdated", System.currentTimeMillis());
+
+        db.collection("FeedFlow")
+                .document("Device001")
+                .set(latestData, com.google.firebase.firestore.SetOptions.merge())
+                .addOnSuccessListener(aVoid -> Log.d("FIRESTORE", "Device001 latest values updated"))
+                .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to update Device001", e));
     }
 
-
-    // -------------------- UI STATUS --------------------
     private void updateTempStatus(double temp) {
         if (txtWaterTempStatus == null) return;
         if (temp >= 26 && temp <= 30) {
@@ -358,7 +359,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    // -------------------- FIRESTORE --------------------
     private void loadFeedLevelFromFirestore() {
         db.collection("FeedFlow")
                 .document("Device001")
@@ -385,7 +385,6 @@ public class HomeActivity extends AppCompatActivity {
                 });
     }
 
-    // -------------------- NAVIGATION --------------------
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
         bottomNav.setSelectedItemId(R.id.nav_home);
 

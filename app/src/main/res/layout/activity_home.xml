@@ -40,10 +40,10 @@
                     android:fontFamily="@font/poppins_bold" />
 
                 <TextView
-                    android:id="@+id/txtDeviceMac"
+                    android:id="@+id/txtDeviceName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="No Device Connected"
+                    android:text=""
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_regular" />
