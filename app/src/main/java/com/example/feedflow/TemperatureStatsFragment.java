@@ -5,13 +5,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,9 +19,11 @@ import androidx.fragment.app.Fragment;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -33,22 +33,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.UUID;
 
 public class TemperatureStatsFragment extends Fragment {
 
-    private TextView tvLastUpdated, tvTempCurrent, tvTempAverage;
-    private TextView tvOptimalTime, tvBelowOptimal, tvAboveOptimal;
     private LineChart tempLineChart;
-
     private FirebaseFirestore db;
     private ArrayList<Double> tempHistory = new ArrayList<>();
 
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
 
-    private static final UUID MY_UUID =
-            UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private final double OPTIMAL_MIN = 25.0;
     private final double OPTIMAL_MAX = 30.0;
@@ -65,37 +63,33 @@ public class TemperatureStatsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        tvLastUpdated   = view.findViewById(R.id.tvLastUpdated);
-        tvTempCurrent   = view.findViewById(R.id.tvTempCurrent);
-        tvTempAverage   = view.findViewById(R.id.tvTempAverage);
-        tvOptimalTime   = view.findViewById(R.id.tvOptimalTime);
-        tvBelowOptimal  = view.findViewById(R.id.tvBelowOptimal);
-        tvAboveOptimal  = view.findViewById(R.id.tvAboveOptimal);
-        tempLineChart   = view.findViewById(R.id.tempLineChart);
-
+        tempLineChart = view.findViewById(R.id.tempLineChart);
         db = FirebaseFirestore.getInstance();
 
-        fetchTemperatureTrends();
+        fetchWeeklyTemperature();
         connectToEsp32();
     }
 
     // ------------------------------------------------------------
-    // 🔹 Load the SAME temperature stored by the Water Temperature card
+    // 🔹 Fetch last 7 days temperature from Firestore
     // ------------------------------------------------------------
-    private void fetchTemperatureTrends() {
+    private void fetchWeeklyTemperature() {
         db.collection("FeedFlow")
                 .document("Device001")
                 .collection("readings")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
-                .limit(30)
+                .limit(7)
                 .get()
                 .addOnSuccessListener(querySnapshots -> {
                     ArrayList<Entry> entries = new ArrayList<>();
+                    tempHistory.clear();
                     int index = 0;
 
-                    tempHistory.clear();
+                    // Reverse to get oldest first
+                    ArrayList<QueryDocumentSnapshot> docs = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshots) docs.add(0, doc);
 
-                    for (QueryDocumentSnapshot doc : querySnapshots) {
+                    for (QueryDocumentSnapshot doc : docs) {
                         Double temp = doc.getDouble("temperature");
                         if (temp != null) {
                             entries.add(new Entry(index, temp.floatValue()));
@@ -104,64 +98,59 @@ public class TemperatureStatsFragment extends Fragment {
                         }
                     }
 
-                    updateStatsUI();
                     updateLineChart(entries);
                 })
                 .addOnFailureListener(e -> Log.e("FIRESTORE", "Failed to load chart", e));
     }
 
+    // ------------------------------------------------------------
+    // 🔹 Update chart with weekly temperature
+    // ------------------------------------------------------------
     private void updateLineChart(ArrayList<Entry> entries) {
         LineDataSet dataSet = new LineDataSet(entries, "Sea Water Temp (°C)");
-
-        dataSet.setColor(Color.RED);
+        dataSet.setColor(0xFF0288D1); // Blue line
         dataSet.setLineWidth(2f);
         dataSet.setCircleRadius(4f);
         dataSet.setValueTextSize(10f);
 
-        tempLineChart.setData(new LineData(dataSet));
+        LineData lineData = new LineData(dataSet);
+        tempLineChart.setData(lineData);
 
-        Description desc = new Description();
-        desc.setText("Sea Water Temperature Trends");
-        tempLineChart.setDescription(desc);
+        // X-axis labels
+        ArrayList<String> labels = getLast7DaysLabels();
+        tempLineChart.getXAxis().setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int index = Math.round(value);
+                if (index >= 0 && index < labels.size()) return labels.get(index);
+                else return "";
+            }
+        });
+
+        tempLineChart.getXAxis().setGranularity(1f);
+        tempLineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
 
         tempLineChart.invalidate();
     }
 
     // ------------------------------------------------------------
-    // 🔹 Temperature statistics
+    // 🔹 Last 7 days labels for X-axis
     // ------------------------------------------------------------
-    private void updateStatsUI() {
-        if (tempHistory.isEmpty()) return;
+    private ArrayList<String> getLast7DaysLabels() {
+        ArrayList<String> labels = new ArrayList<>();
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("EEE", Locale.getDefault());
+        Calendar cal = Calendar.getInstance();
 
-        double sum = 0;
-        int optimal = 0, below = 0, above = 0;
-
-        for (double t : tempHistory) {
-            sum += t;
-
-            if (t >= OPTIMAL_MIN && t <= OPTIMAL_MAX) optimal++;
-            else if (t < OPTIMAL_MIN) below++;
-            else above++;
+        for (int i = 6; i >= 0; i--) {
+            cal.setTimeInMillis(System.currentTimeMillis());
+            cal.add(Calendar.DAY_OF_YEAR, -i);
+            labels.add(sdf.format(cal.getTime()));
         }
-
-        double avg = sum / tempHistory.size();
-
-        tvTempAverage.setText(String.format("Average: %.2f°C", avg));
-        tvOptimalTime.setText(String.format("Optimal: %.0f%%",
-                (optimal * 100.0 / tempHistory.size())));
-        tvBelowOptimal.setText(String.format("Below: %.0f%%",
-                (below * 100.0 / tempHistory.size())));
-        tvAboveOptimal.setText(String.format("Above: %.0f%%",
-                (above * 100.0 / tempHistory.size())));
-
-        tvTempCurrent.setText(
-                String.format("Current: %.2f°C",
-                        tempHistory.get(0))  // MOST RECENT
-        );
+        return labels;
     }
 
     // ------------------------------------------------------------
-    // 🔹 Bluetooth: Reads SAME VALUE used by Water Temp Card
+    // 🔹 Bluetooth connection to ESP32 to read live data
     // ------------------------------------------------------------
     private void connectToEsp32() {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -198,21 +187,22 @@ public class TemperatureStatsFragment extends Fragment {
                 String line;
 
                 while ((line = reader.readLine()) != null) {
-
-                    // 🔥 New parsing: extract temperature only from "temp:feed"
                     String[] parts = line.split(":");
                     if (parts.length >= 1) {
                         try {
-                            double waterTemp = Double.parseDouble(parts[0]); // ONLY FIRST VALUE
+                            double waterTemp = Double.parseDouble(parts[0]);
 
                             requireActivity().runOnUiThread(() -> {
                                 tempHistory.add(0, waterTemp);
                                 if (tempHistory.size() > 50) tempHistory.remove(tempHistory.size() - 1);
 
-                                updateStatsUI();
+                                ArrayList<Entry> entries = new ArrayList<>();
+                                for (int i = 0; i < tempHistory.size() && i < 7; i++)
+                                    entries.add(new Entry(i, tempHistory.get(tempHistory.size() - 1 - i).floatValue()));
+
+                                updateLineChart(entries);
                                 saveTemperature(waterTemp);
                             });
-
                         } catch (Exception ignored) {}
                     }
                 }
@@ -222,9 +212,6 @@ public class TemperatureStatsFragment extends Fragment {
         }).start();
     }
 
-    // ------------------------------------------------------------
-    // 🔹 Save SAME temperature value to Firestore
-    // ------------------------------------------------------------
     private void saveTemperature(double temp) {
         db.collection("FeedFlow")
                 .document("Device001")
@@ -239,6 +226,7 @@ public class TemperatureStatsFragment extends Fragment {
         public long timestamp;
 
         TempReading() {}
+
         TempReading(double temp, long ts) {
             this.temperature = temp;
             this.timestamp = ts;
