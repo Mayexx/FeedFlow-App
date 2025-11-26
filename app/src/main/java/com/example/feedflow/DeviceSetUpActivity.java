@@ -4,13 +4,18 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -32,12 +37,17 @@ public class DeviceSetUpActivity extends AppCompatActivity {
     private static final int REQUEST_BLUETOOTH_PERMISSIONS = 1;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothSocket bluetoothSocket;
+    private int retryCount = 0;
+    private final int MAX_RETRIES = 3;
+    private OnBluetoothDataReceived dataCallback;
+    private volatile boolean stopReading = false;
 
     private String connectedDeviceAddress;
     private String connectedDeviceName;
 
     private Spinner deviceSpinner;
     private Button confirmButton;
+    private FrameLayout loadingOverlay;
 
     // SPP UUID for most Bluetooth modules (HC-05, HC-06, ESP32)
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -49,6 +59,7 @@ public class DeviceSetUpActivity extends AppCompatActivity {
 
         deviceSpinner = findViewById(R.id.deviceSpinner);
         confirmButton = findViewById(R.id.confirmButton);
+        loadingOverlay = findViewById(R.id.loadingOverlay);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
@@ -58,8 +69,53 @@ public class DeviceSetUpActivity extends AppCompatActivity {
 
         checkPermissions();
         loadPairedDevices();
+        startDeviceDiscovery();
 
         confirmButton.setOnClickListener(v -> connectToSelectedDevice());
+    }
+
+    private final BroadcastReceiver discoveryReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if (device == null) return;
+
+                String deviceInfo = device.getName() + " - " + device.getAddress();
+
+                ArrayAdapter<String> adapter = (ArrayAdapter<String>) deviceSpinner.getAdapter();
+                if (adapter != null && adapter.getPosition(deviceInfo) == -1) {
+                    adapter.add(deviceInfo);
+                    adapter.notifyDataSetChanged();
+                }
+            }
+        }
+    };
+
+    public interface OnBluetoothDataReceived {
+        void onDataReceived(String data);
+    }
+    public void setDataCallback(OnBluetoothDataReceived callback) {
+        this.dataCallback = callback;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(discoveryReceiver, filter);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterReceiver(discoveryReceiver);
     }
 
     // ✅ Check runtime permissions
@@ -74,6 +130,11 @@ public class DeviceSetUpActivity extends AppCompatActivity {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.BLUETOOTH_SCAN);
             }
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         }
 
         if (!permissions.isEmpty()) {
@@ -109,7 +170,6 @@ public class DeviceSetUpActivity extends AppCompatActivity {
         deviceSpinner.setAdapter(adapter);
     }
 
-    // ✅ Connect to the selected device
     private void connectToSelectedDevice() {
         String selected = (String) deviceSpinner.getSelectedItem();
         if (selected == null || selected.equals("Select Device")) {
@@ -117,33 +177,54 @@ public class DeviceSetUpActivity extends AppCompatActivity {
             return;
         }
 
-        // Extract name and MAC address
-        if (selected.contains("-")) {
-            String[] parts = selected.split("-");
-            connectedDeviceName = parts[0].trim();
-            connectedDeviceAddress = parts[1].trim();
-        } else {
+        int lastDash = selected.lastIndexOf("-");
+        if (lastDash == -1) {
             Toast.makeText(this, "Invalid device format", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Check permissions before connecting
+        connectedDeviceName = selected.substring(0, lastDash).trim();
+        connectedDeviceAddress = selected.substring(lastDash + 1).trim();
+
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Bluetooth permission missing!", Toast.LENGTH_SHORT).show();
             checkPermissions();
             return;
         }
 
-        // Connect in background thread
+        // Disable button and show loading spinner
+        confirmButton.setEnabled(false);
+        loadingOverlay.setVisibility(View.VISIBLE);
+
+        // Reset retry count
+        retryCount = 0;
+
+        // Start connection with retry logic
+        connectWithRetry();
+    }
+
+    private void connectWithRetry() {
         new Thread(() -> {
             try {
                 BluetoothDevice device = bluetoothAdapter.getRemoteDevice(connectedDeviceAddress);
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
                 bluetoothSocket = device.createRfcommSocketToServiceRecord(SPP_UUID);
                 bluetoothAdapter.cancelDiscovery();
                 bluetoothSocket.connect();
 
-                runOnUiThread(() -> Toast.makeText(this,
-                        "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Connected to " + connectedDeviceName, Toast.LENGTH_SHORT).show();
+                    loadingOverlay.setVisibility(View.GONE);
+                });
 
                 // Start reading data
                 readSensorData();
@@ -156,34 +237,47 @@ public class DeviceSetUpActivity extends AppCompatActivity {
                 finish();
 
             } catch (IOException e) {
-                Log.e("BT_CONNECT", "Connection failed", e);
-                runOnUiThread(() -> Toast.makeText(this,
-                        "Bluetooth connection failed", Toast.LENGTH_SHORT).show());
+                retryCount++;
+                if (retryCount <= MAX_RETRIES) {
+                    // Retry after a short delay
+                    runOnUiThread(() -> Toast.makeText(this, "Retrying connection... (" + retryCount + ")", Toast.LENGTH_SHORT).show());
+                    try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+                    connectWithRetry();
+                } else {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Bluetooth connection failed. Please try again.", Toast.LENGTH_LONG).show();
+                        loadingOverlay.setVisibility(View.GONE);
+                        confirmButton.setEnabled(true);
+                        confirmButton.setText("Retry"); // change button text to Retry
+                    });
+                }
             }
         }).start();
     }
 
-    // ✅ Read data continuously from ESP32
+
     private void readSensorData() {
+        stopReading = false;
+
         new Thread(() -> {
             try {
                 InputStream inputStream = bluetoothSocket.getInputStream();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
                 String line;
 
-                while ((line = reader.readLine()) != null) {
+                while (!stopReading && (line = reader.readLine()) != null) {
                     String finalLine = line;
                     runOnUiThread(() -> {
-                        // Example: display in Toast or send to HomeActivity via Intent/LiveData
                         Log.d("BT_DATA", finalLine);
-                        // Toast.makeText(this, finalLine, Toast.LENGTH_SHORT).show(); // optional
+                        if (dataCallback != null) {
+                            dataCallback.onDataReceived(finalLine); // send to HomeActivity
+                        }
                     });
-
-                    // Optional: send to Firebase
-                    // FirebaseDatabase.getInstance().getReference("esp32Data").setValue(finalLine);
                 }
             } catch (IOException e) {
-                Log.e("BT_READ", "Failed to read data", e);
+                if (!stopReading) { // only log if not stopping intentionally
+                    Log.e("BT_READ", "Failed to read data", e);
+                }
             }
         }).start();
     }
@@ -210,6 +304,31 @@ public class DeviceSetUpActivity extends AppCompatActivity {
                 Toast.makeText(this, "Bluetooth permission denied!", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void startDeviceDiscovery() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        if (bluetoothAdapter.isDiscovering()) {
+            bluetoothAdapter.cancelDiscovery();
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED) {
+            checkPermissions();
+            return;
+        }
+
+        bluetoothAdapter.startDiscovery();
+        Toast.makeText(this, "Scanning for devices...", Toast.LENGTH_SHORT).show();
     }
 
     // ✅ Disconnect safely

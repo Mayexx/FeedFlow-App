@@ -108,27 +108,49 @@
                 android:layout_height="50dp"
                 android:layout_gravity="center_horizontal">
 
-            <Button
-                android:id="@+id/confirmButton"
-                android:layout_width="130dp"
-                android:layout_height="50dp"
-                android:backgroundTint="#4894FE"
-                android:layout_marginRight="20dp"
-                android:fontFamily="@font/poppins_bold"
-                android:text="Confirm"
-                android:textColor="#FFFFFF" />
-            <!-- Cancel Button -->
-            <Button
-                android:id="@+id/cancelButton"
-                android:layout_width="130dp"
-                android:layout_height="50dp"
-                android:backgroundTint="#4894FE"
-                android:fontFamily="@font/poppins_bold"
+                <Button
+                    android:id="@+id/confirmButton"
+                    android:layout_width="130dp"
+                    android:layout_height="50dp"
+                    android:backgroundTint="#4894FE"
+                    android:layout_marginRight="20dp"
+                    android:fontFamily="@font/poppins_bold"
+                    android:text="Confirm"
+                    android:textColor="#FFFFFF" />
 
-                android:text="Cancel"
-                android:textColor="#FFFFFF" />
-        </LinearLayout></LinearLayout>
-
+                <!-- Cancel Button -->
+                <Button
+                    android:id="@+id/cancelButton"
+                    android:layout_width="130dp"
+                    android:layout_height="50dp"
+                    android:backgroundTint="#4894FE"
+                    android:fontFamily="@font/poppins_bold"
+                    android:text="Cancel"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
+
+    <!-- Loading Overlay -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ProgressBar
+            android:id="@+id/loadingSpinner"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:progressTint="#4894FE"/>
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
