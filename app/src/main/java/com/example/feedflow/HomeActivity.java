@@ -100,16 +100,22 @@ public class HomeActivity extends AppCompatActivity {
     // -------------------- FEEDING --------------------
     private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
-            feedAmount++;
-            txtFeedAmount.setText(feedAmount + " kg");
-            sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            if (feedAmount < 10) {               // ⬅️ limit to 10 kg
+                feedAmount++;
+                txtFeedAmount.setText(feedAmount + " kg");
+                sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            } else {
+                Toast.makeText(this, "Maximum is 10 kg", Toast.LENGTH_SHORT).show();
+            }
         });
 
         btnDecrease.setOnClickListener(v -> {
-            if (feedAmount > 1) {
+            if (feedAmount > 1) {               // ⬅️ minimum is 1 kg
                 feedAmount--;
                 txtFeedAmount.setText(feedAmount + " kg");
                 sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            } else {
+                Toast.makeText(this, "Minimum is 1 kg", Toast.LENGTH_SHORT).show();
             }
         });
 
