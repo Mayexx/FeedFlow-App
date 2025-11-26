@@ -1,161 +1,139 @@
 package com.example.feedflow;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.UUID;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView txtTemperature, txtFeedLevel, txtDeviceName, txtWaterTempStatus, txtFeedLevelStatus;
+    // Firebase
+    private FirebaseFirestore db;
+
+    // UI Elements
+    private TextView txtTemperature, txtFeedLevel, txtFeedAmount;
+    private TextView waterTemperature, txtWaterTempStatus, txtFeedLevelStatus, txtDeviceName;
     private ProgressBar progressTemperature;
     private Button btnFeedNow, btnIncrease, btnDecrease;
 
-    private BluetoothAdapter btAdapter;
-    private BluetoothSocket btSocket;
-    private InputStream inputStream;
-    private OutputStream outputStream;
-    private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    // App Data
+    private int feedAmount = 25;
+    private static final String PREF_NAME = "FeedFlowPrefs";
+    private SharedPreferences sharedPreferences;
 
-    private String connectedDeviceName = "Not Connected";
-    private String ESP32_MAC = "B4:88:08:B4:03:6A"; // Replace with your ESP32 MAC
-    private int feedAmount = 1;
+    // Bluetooth
+    private BluetoothSerial btSerial;
 
-    @SuppressLint("SetTextI18n")
-    @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        // Initialize UI
+        db = FirebaseFirestore.getInstance();
+
+        initViews();
+        restoreSavedData();
+        setupButtons();
+        setupBottomNavigation(findViewById(R.id.bottomNavigation));
+
+        // ----- BLUETOOTH -----
+        btSerial = new BluetoothSerial(this);
+
+        // Set callback to receive data from ESP32
+        btSerial.setCallbacks(data -> {
+            String msg = new String(data).trim();
+            runOnUiThread(() -> {
+                if (msg.contains(":")) {
+                    String[] parts = msg.split(":");
+                    String tempStr = parts[0];
+                    String feedStr = parts[1];
+                    String time = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                    updateUI(tempStr, feedStr, time);
+                }
+            });
+        });
+
+        // Connect to your ESP32 MAC
+        btSerial.connect("B4:88:08:B4:03:6A"); // replace with your device MAC
+    }
+
+    private void initViews() {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
-        txtDeviceName = findViewById(R.id.txtDeviceName);
+        txtFeedAmount = findViewById(R.id.txtFeedAmount);
+        waterTemperature = findViewById(R.id.waterTemperature);
         txtWaterTempStatus = findViewById(R.id.txtWaterTempStatus);
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
         progressTemperature = findViewById(R.id.progressTemperature);
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
+        txtDeviceName = findViewById(R.id.txtDeviceName);
+    }
 
-        // Setup feed buttons
+    private void restoreSavedData() {
+        sharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        feedAmount = sharedPreferences.getInt("feedAmount", 25);
+        txtFeedAmount.setText(feedAmount + " kg");
+        int tempThreshold = sharedPreferences.getInt("tempThreshold", 28);
+        progressTemperature.setProgress(tempThreshold);
+        txtTemperature.setText("Temperature: " + tempThreshold + "°C");
+        txtDeviceName.setText("Not Connected");
+    }
+
+    private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
-            if (feedAmount < 10) feedAmount++;
+            if (feedAmount < 10) {
+                feedAmount++;
+                txtFeedAmount.setText(feedAmount + " kg");
+                sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            } else {
+                Toast.makeText(this, "Maximum is 10 kg", Toast.LENGTH_SHORT).show();
+            }
         });
+
         btnDecrease.setOnClickListener(v -> {
-            if (feedAmount > 1) feedAmount--;
+            if (feedAmount > 1) {
+                feedAmount--;
+                txtFeedAmount.setText(feedAmount + " kg");
+                sharedPreferences.edit().putInt("feedAmount", feedAmount).apply();
+            } else {
+                Toast.makeText(this, "Cannot dispense less than 1 kg", Toast.LENGTH_SHORT).show();
+            }
         });
-        btnFeedNow.setOnClickListener(v -> sendBluetoothCommand("FEED:" + feedAmount));
 
-        // Initialize Bluetooth
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (btAdapter == null) {
-            Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_LONG).show();
-            return;
-        }
-        if (!btAdapter.isEnabled()) {
-            Toast.makeText(this, "Please enable Bluetooth", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        // Permissions check for Android 12+
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 100);
-            return;
-        }
-
-        // Connect to ESP32
-        BluetoothDevice device = btAdapter.getRemoteDevice(ESP32_MAC);
-        connectToDevice(device);
-    }
-
-    private void connectToDevice(BluetoothDevice device) {
-        new Thread(() -> {
-            try {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                btSocket = device.createRfcommSocketToServiceRecord(BT_UUID);
-                btSocket.connect();
-                inputStream = btSocket.getInputStream();
-                outputStream = btSocket.getOutputStream();
-                connectedDeviceName = device.getName();
-
-                runOnUiThread(() -> txtDeviceName.setText("Connected to: " + connectedDeviceName));
-
-                listenForData();
-
-            } catch (IOException e) {
-                runOnUiThread(() -> txtDeviceName.setText("Connection failed"));
-                e.printStackTrace();
+        btnFeedNow.setOnClickListener(v -> {
+            if (btSerial != null) {
+                btSerial.send("FEED:" + feedAmount + "\n");
+                Toast.makeText(this, "Sent feed command: " + feedAmount + " kg", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Bluetooth not connected", Toast.LENGTH_SHORT).show();
             }
-        }).start();
+        });
     }
 
-    private void listenForData() {
-        Handler handler = new Handler(getMainLooper());
-        byte[] buffer = new byte[1024];
-
-        new Thread(() -> {
-            while (true) {
-                try {
-                    if (inputStream != null && inputStream.available() > 0) {
-                        int bytes = inputStream.read(buffer);
-                        String data = new String(buffer, 0, bytes).trim();
-
-                        // Expecting format: "29.5:75" => temperature:feedLevel
-                        if (data.contains(":")) {
-                            String[] parts = data.split(":");
-                            String tempStr = parts[0];
-                            String feedStr = parts[1];
-
-                            handler.post(() -> updateUI(tempStr, feedStr));
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }).start();
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void updateUI(String tempStr, String feedStr) {
+    private void updateUI(String tempStr, String feedStr, String time) {
         try {
             double temp = Double.parseDouble(tempStr);
             double feedLevel = Double.parseDouble(feedStr);
 
-            txtTemperature.setText(temp + " °C");
+            waterTemperature.setText(String.format("%.1f °C", temp));
             progressTemperature.setProgress((int) temp);
-            txtFeedLevel.setText(feedLevel + " %");
+            txtTemperature.setText(temp + " °C");
+            txtFeedLevel.setText(feedStr + "%");
+            txtDeviceName.setText("Connected | Last: " + time);
 
             // Temperature status
             if (temp >= 26 && temp <= 30) {
@@ -181,31 +159,48 @@ public class HomeActivity extends AppCompatActivity {
                 txtFeedLevelStatus.setTextColor(Color.RED);
             }
 
+            // Save latest data locally
+            sharedPreferences.edit()
+                    .putString("latestTemperature", tempStr)
+                    .putString("latestFeedLevel", feedStr)
+                    .putString("lastUpdatedTime", time)
+                    .apply();
+
+            // Save to Firestore
+            Map<String, Object> sensorData = new HashMap<>();
+            sensorData.put("temperature", temp);
+            sensorData.put("feedLevel", feedLevel);
+            sensorData.put("timestamp", System.currentTimeMillis());
+
+            db.collection("FeedFlow")
+                    .document("Device001")
+                    .collection("readings")
+                    .add(sensorData)
+                    .addOnSuccessListener(docRef -> Log.d("FIRESTORE", "Data added"))
+                    .addOnFailureListener(e -> Log.e("FIRESTORE", "Error adding data", e));
+
         } catch (NumberFormatException e) {
-            e.printStackTrace();
+            Log.e("BT_DATA", "Invalid data: " + tempStr + ":" + feedStr, e);
         }
     }
 
-    private void sendBluetoothCommand(String command) {
-        if (btSocket != null && btSocket.isConnected()) {
-            try {
-                outputStream.write((command + "\n").getBytes());
-            } catch (IOException e) {
-                e.printStackTrace();
-                Toast.makeText(this, "Failed to send command", Toast.LENGTH_SHORT).show();
-            }
-        } else {
-            Toast.makeText(this, "Bluetooth not connected", Toast.LENGTH_SHORT).show();
-        }
+    private void setupBottomNavigation(BottomNavigationView bottomNav) {
+        bottomNav.setSelectedItemId(R.id.nav_home);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_home) return true;
+            else if (id == R.id.nav_stats) startActivity(new android.content.Intent(HomeActivity.this, StatsActivity.class));
+            else if (id == R.id.nav_notes) startActivity(new android.content.Intent(HomeActivity.this, NotesActivity.class));
+            else if (id == R.id.nav_alerts) startActivity(new android.content.Intent(HomeActivity.this, AlertsActivity.class));
+            overridePendingTransition(0, 0);
+            finish();
+            return true;
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try {
-            if (btSocket != null) btSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        if (btSerial != null) btSerial.disconnect();
     }
 }
