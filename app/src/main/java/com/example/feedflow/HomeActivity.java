@@ -91,7 +91,6 @@ public class HomeActivity extends AppCompatActivity {
                 );
             }
         });
-        // Connect to ESP32 (replace with your MAC)
         btSerial.connect("B4:8A:0A:B4:03:6A");
     }
     private void initViews() {
@@ -100,11 +99,9 @@ public class HomeActivity extends AppCompatActivity {
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
-
         progressTemperature = findViewById(R.id.progressTemperature);
         progressFeed = findViewById(R.id.progressFeed);
         progressTemperature.setMax(50);
-
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
@@ -139,7 +136,6 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private void requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
