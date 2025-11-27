@@ -47,6 +47,13 @@
                     android:textColor="#FFFFFF"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_regular" />
+                <TextView
+                    android:id="@+id/txtBtStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disconnected"
+                    android:textColor="@android:color/holo_red_dark"
+                    android:textSize="16sp"/>
             </LinearLayout>
 
             <!-- Temperature and Feed Level -->
@@ -253,7 +260,14 @@
                         android:textSize="12sp"
                         android:fontFamily="@font/poppins_regular"/>
                 </LinearLayout>
+
+                <ProgressBar
+                    android:id="@+id/progressFeed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true" />
             </LinearLayout>
+
 
             <FrameLayout
                 android:id="@+id/loadingOverlay"
