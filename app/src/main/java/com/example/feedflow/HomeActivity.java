@@ -1,6 +1,7 @@
 package com.example.feedflow;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Date;
@@ -220,5 +222,34 @@ public class HomeActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             Log.e("BT-DATA", "Parsing error: " + e.getMessage());
         }
+    }
+    private void setupBottomNavigation(BottomNavigationView bottomNav) {
+        bottomNav.setSelectedItemId(R.id.nav_stats); // highlight current tab
+
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_stats) {
+                startActivity(new Intent(this, HomeActivity.class));
+                overridePendingTransition(0,0);
+                return true;
+            } else if (id == R.id.nav_notes) {
+                startActivity(new Intent(this, NotesActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            } else if (id == R.id.nav_alerts) {
+                startActivity(new Intent(this, AlertsActivity.class));
+                overridePendingTransition(0,0);
+                finish();
+                return true;
+            }
+            return false;
+        });
     }
 }
