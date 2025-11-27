@@ -41,7 +41,7 @@ public class NotesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_notes);
 
         db = FirebaseFirestore.getInstance();
-        notesRef = db.collection("notes");
+        notesRef = db.collection("FeedFlow").document("Device001").collection("notes");
 
         // UI components
         editTextDeadFish = findViewById(R.id.editTextDeadFish);
@@ -102,6 +102,7 @@ public class NotesActivity extends AppCompatActivity {
         noteMap.put("amount", amount);
         noteMap.put("behaviour", behaviour);
         noteMap.put("notes", notes);
+        noteMap.put("timestamp", System.currentTimeMillis());
 
         notesRef.add(noteMap)
                 .addOnSuccessListener(docRef -> Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show())

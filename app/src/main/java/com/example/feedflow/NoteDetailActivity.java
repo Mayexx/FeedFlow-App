@@ -4,14 +4,14 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class NoteDetailActivity extends AppCompatActivity {
 
-    private TextView tvDetail;
+    private TextView tvDeadFish, tvTemperature, tvWeather, tvFeedingTime, tvAmount, tvBehaviour, tvNotes;
     private Button btnClose;
     private FirebaseFirestore db;
 
@@ -20,8 +20,16 @@ public class NoteDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note_detail);
 
-        tvDetail = findViewById(R.id.tvDetail);
+        // Initialize views
+        tvDeadFish = findViewById(R.id.tvDeadFish);
+        tvTemperature = findViewById(R.id.tvTemperature);
+        tvWeather = findViewById(R.id.tvWeather);
+        tvFeedingTime = findViewById(R.id.tvFeedingTime);
+        tvAmount = findViewById(R.id.tvAmount);
+        tvBehaviour = findViewById(R.id.tvBehaviour);
+        tvNotes = findViewById(R.id.tvNotes);
         btnClose = findViewById(R.id.btnClose);
+
         db = FirebaseFirestore.getInstance();
 
         String noteId = getIntent().getStringExtra("note_id");
@@ -35,21 +43,26 @@ public class NoteDetailActivity extends AppCompatActivity {
     }
 
     private void loadNoteDetail(String noteId) {
-        db.collection("notes").document(noteId).get()
+        db.collection("FeedFlow")
+                .document("Device001")
+                .collection("notes")
+                .document(noteId)
+                .get()
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
-                        String detailText = "Dead Fish: " + doc.getString("deadFish") +
-                                "\nTemperature: " + doc.getString("temperature") + "°C" +
-                                "\nWeather: " + doc.getString("weather") +
-                                "\nFeeding: " + doc.getString("feedingTime") +
-                                "\nAmount: " + doc.getString("amount") + "kg" +
-                                "\nBehaviour: " + doc.getString("behaviour") +
-                                "\nNotes: " + doc.getString("notes");
-                        tvDetail.setText(detailText);
+                        tvDeadFish.setText(doc.getString("deadFish") != null ? doc.getString("deadFish") : "-");
+                        tvTemperature.setText(doc.getString("temperature") != null ? doc.getString("temperature") + "°C" : "-");
+                        tvWeather.setText(doc.getString("weather") != null ? doc.getString("weather") : "-");
+                        tvFeedingTime.setText(doc.getString("feedingTime") != null ? doc.getString("feedingTime") : "-");
+                        tvAmount.setText(doc.getString("amount") != null ? doc.getString("amount") + " kg" : "-");
+                        tvBehaviour.setText(doc.getString("behaviour") != null ? doc.getString("behaviour") : "-");
+                        tvNotes.setText(doc.getString("notes") != null ? doc.getString("notes") : "-");
                     } else {
-                        tvDetail.setText("Note not found.");
+                        Toast.makeText(this, "Note not found", Toast.LENGTH_SHORT).show();
+                        finish();
                     }
                 })
-                .addOnFailureListener(e -> tvDetail.setText("Failed to load note details."));
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to load note", Toast.LENGTH_SHORT).show());
     }
+
 }

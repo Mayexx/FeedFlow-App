@@ -132,7 +132,7 @@ public class FeedingStatsFragment extends Fragment {
 
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         for (BluetoothDevice device : pairedDevices) {
-            if (device.getName() != null && device.getName().equals("ESP32_Feeder")) {
+            if (device.getName() != null && device.getName().equals("ESP32_Test")) {
                 try {
                     bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
                     bluetoothSocket.connect();

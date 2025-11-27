@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#F9F9F9"
     tools:context=".NotesActivity">
 
     <!-- Scrollable content -->
@@ -13,197 +13,189 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigation"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:overScrollMode="ifContentScrolls">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
+            <!-- Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="#4894FE"
+                android:orientation="vertical"
+                android:background="#3AB4FF"
                 android:padding="16dp"
-                android:orientation="vertical">
+                android:elevation="4dp"
+                android:layout_marginBottom="16dp"
+                android:clipToOutline="true"
+                android:backgroundTint="#3AB4FF">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="FeedFlow"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp"
+                    android:textSize="20sp"
                     android:fontFamily="@font/poppins_bold" />
 
-                <TextView
-                    android:id="@+id/txtDeviceName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No Device Connected"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
-
-            <!-- Input Section -->
-            <LinearLayout
+            <!-- Input Card -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:background="#D9D9D9"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                android:backgroundTint="#FFFFFF"
                 android:layout_marginBottom="16dp"
-                android:layout_marginTop="8dp"
-                android:elevation="4dp"
-                android:clipToOutline="true">
-
-                <!-- Dead Fish -->
-                <EditText
-                    android:id="@+id/editTextDeadFish"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Number of dead fish"
-                    android:inputType="number"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:background="@drawable/edittext_bg"
-                    android:padding="12dp"
-                    android:layout_marginBottom="8dp" />
-
-                <!-- Temperature -->
-                <EditText
-                    android:id="@+id/editTextTemp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Temperature (°C)"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:inputType="numberDecimal"
-                    android:background="@drawable/edittext_bg"
-                    android:padding="12dp"
-                    android:layout_marginBottom="8dp" />
-
-                <!-- Weather & Feeding Time -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2"
-                    android:layout_marginBottom="8dp">
-
-                    <Spinner
-                        android:id="@+id/spinnerWeather"
-                        android:entries="@array/weather_array"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@drawable/spinner_bg"
-                        android:textSize="10sp"
-                        android:fontFamily="@font/poppins_regular"
-                        android:padding="12dp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerFeedingTime"
-                        android:entries="@array/feeding_array"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:fontFamily="@font/poppins_regular"
-                        android:background="@drawable/spinner_bg"
-                        android:padding="12dp"
-                        android:textSize="10sp" />
-                </LinearLayout>
-
-                <!-- Feed Type & Amount -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2"
-                    android:layout_marginBottom="8dp">
-
-                    <Spinner
-                        android:id="@+id/spinnerBehaviour"
-                        android:entries="@array/behaviour_array"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/spinner_bg"
-                        android:padding="12dp"
-                        android:textSize="10sp"
-                        android:fontFamily="@font/poppins_regular"
-                        android:layout_marginBottom="8dp" />
-
-
-                    <EditText
-                        android:id="@+id/editTextAmount"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
-                        android:hint="Amount (kg)"
-                        android:inputType="numberDecimal"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textSize="12sp"
-                        android:background="@drawable/edittext_bg"
-                        android:padding="12dp" />
-                </LinearLayout>
-
-                <!-- Notes -->
-                <EditText
-                    android:id="@+id/editTextNotes"
-                    android:layout_width="match_parent"
-                    android:layout_height="100dp"
-                    android:hint="Additional Observations..."
-                    android:gravity="top"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:background="@drawable/edittext_bg"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp" />
-
-                <!-- Record Button -->
-                <Button
-                    android:id="@+id/btnRecord"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Record"
-                    android:fontFamily="@font/poppins_bold"
-                    android:textStyle="bold"
-                    android:backgroundTint="#3AB4FF"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="4dp" />
-            </LinearLayout>
-
-            <!-- Saved Notes Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="#D9D9D9"
-                android:elevation="2dp"
-                android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="All saved Notes"
-                    android:textColor="#333333"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <!-- RecyclerView for saved notes -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerViewNotes"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    android:overScrollMode="never" />
-            </LinearLayout>
+                    android:orientation="vertical">
+
+                    <!-- Dead Fish -->
+                    <EditText
+                        android:id="@+id/editTextDeadFish"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Number of dead fish"
+                        android:inputType="number"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="14sp"
+                        android:background="@drawable/edittext_bg"
+                        android:padding="12dp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Temperature -->
+                    <EditText
+                        android:id="@+id/editTextTemp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Temperature (°C)"
+                        android:inputType="numberDecimal"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="14sp"
+                        android:background="@drawable/edittext_bg"
+                        android:padding="12dp"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Weather & Feeding Time -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical">
+
+                        <Spinner
+                            android:id="@+id/spinnerWeather"
+                            android:entries="@array/weather_array"
+                            android:layout_height="50dp"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/spinner_bg"
+                            android:fontFamily="@font/poppins_regular"
+                            android:padding="12dp"
+                            android:textSize="14sp" />
+
+                        <Spinner
+                            android:id="@+id/spinnerFeedingTime"
+                            android:entries="@array/feeding_array"
+                            android:layout_height="50dp"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/spinner_bg"
+                            android:fontFamily="@font/poppins_regular"
+                            android:padding="12dp"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <!-- Behaviour & Amount -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:layout_marginBottom="12dp"
+                        android:gravity="center_vertical">
+
+                        <Spinner
+                            android:id="@+id/spinnerBehaviour"
+                            android:entries="@array/behaviour_array"
+                            android:layout_height="50dp"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/spinner_bg"
+                            android:padding="12dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="14sp" />
+
+                        <EditText
+                            android:id="@+id/editTextAmount"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:hint="Amount (kg)"
+                            android:inputType="numberDecimal"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="14sp"
+                            android:background="@drawable/edittext_bg"
+                            android:padding="12dp" />
+                    </LinearLayout>
+
+                    <!-- Notes -->
+                    <EditText
+                        android:id="@+id/editTextNotes"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:hint="Additional Observations..."
+                        android:gravity="top"
+                        android:fontFamily="@font/poppins_regular"
+                        android:textSize="14sp"
+                        android:background="@drawable/edittext_bg"
+                        android:padding="12dp"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Record Button -->
+                    <Button
+                        android:id="@+id/btnRecord"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Record"
+                        android:fontFamily="@font/poppins_bold"
+                        android:textStyle="bold"
+                        android:backgroundTint="#3AB4FF"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Saved Notes Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Saved Notes"
+                android:textColor="#333333"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_bold"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="4dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"/>
         </LinearLayout>
     </ScrollView>
 
@@ -214,6 +206,5 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
-        app:menu="@menu/bottom_nav_menu" />
-
+        app:menu="@menu/bottom_nav_menu"/>
 </RelativeLayout>
