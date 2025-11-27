@@ -1,5 +1,6 @@
 package com.example.feedflow;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -50,12 +51,30 @@ public class BluetoothSerial extends Context {
     private BluetoothDevice btDevice;
     private OutputStream outputStream;
     private InputStream inputStream;
+    private ConnectionListener connectionListener;
 
     private Thread readThread;
     private volatile boolean reading;
 
     private static final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private DataCallback callback;
+
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
+
+
+    public interface ConnectionListener {
+        void onDisconnected();
+    }
+
+    public void setConnectionListener(ConnectionListener listener) {
+        this.connectionListener = listener;
+    }
 
     @Override
     public AssetManager getAssets() {
@@ -614,7 +633,7 @@ public class BluetoothSerial extends Context {
         new Thread(() -> {
             try {
                 btDevice = btAdapter.getRemoteDevice(macAddress);
-                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     // TODO: Consider calling
                     //    ActivityCompat#requestPermissions
                     // here to request the missing permissions, and then overriding
@@ -628,6 +647,7 @@ public class BluetoothSerial extends Context {
                 btAdapter.cancelDiscovery();
                 btSocket.connect();
 
+
                 outputStream = btSocket.getOutputStream();
                 inputStream = btSocket.getInputStream();
 
@@ -638,38 +658,53 @@ public class BluetoothSerial extends Context {
             }
         }).start();
     }
-
+    
     private void startReading() {
         reading = true;
         readThread = new Thread(() -> {
             StringBuilder sb = new StringBuilder();
             byte[] buffer = new byte[1024];
             int bytes;
+
             try {
                 while (reading && inputStream != null) {
-                    bytes = inputStream.read(buffer);
-                    if (bytes > 0) {
-                        String part = new String(buffer, 0, bytes);
-                        sb.append(part);
+                    try {
+                        bytes = inputStream.read(buffer);  // ← will throw if ESP32 disconnects
 
-                        int index;
-                        while ((index = sb.indexOf("\n")) != -1) {
-                            String line = sb.substring(0, index).trim();
-                            sb.delete(0, index + 1);
-                            if (!line.isEmpty() && callback != null) {
-                                callback.onDataReceived(line.getBytes());
+                        if (bytes > 0) {
+                            String part = new String(buffer, 0, bytes);
+                            sb.append(part);
+
+                            int index;
+                            while ((index = sb.indexOf("\n")) != -1) {
+                                String line = sb.substring(0, index).trim();
+                                sb.delete(0, index + 1);
+
+                                if (!line.isEmpty() && callback != null) {
+                                    callback.onDataReceived(line.getBytes());
+                                }
                             }
                         }
+
+                    } catch (Exception ex) {
+                        Log.e("BT_SERIAL", "Lost connection while reading", ex);
+
+                        if (connectionListener != null) {
+                            connectionListener.onDisconnected();   // Notify Activity
+                        }
+
+                        break;  // exit reading loop
                     }
                 }
-            } catch (Exception e) {
-                Log.e("BT_SERIAL", "Read error", e);
+
             } finally {
-                disconnect();
+                disconnect();  // cleanup
             }
         });
+
         readThread.start();
     }
+
 
     public synchronized void send(String msg) {
         try {

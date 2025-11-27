@@ -17,13 +17,14 @@ import androidx.core.app.ActivityCompat;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus;
+    private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus, txtFeedAmount;
     private ProgressBar progressTemperature, progressFeed;
     private Button btnFeedNow, btnIncrease, btnDecrease;
 
@@ -34,6 +35,7 @@ public class HomeActivity extends AppCompatActivity {
     private int feedAmount = 5;
     private static final int FEED_MAX = 10;
     private static final int FEED_MIN = 1;
+    private float currentWeight = 0.0f;
 
     private enum ConnectionState {DISCONNECTED, CONNECTING, CONNECTED}
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
@@ -47,6 +49,9 @@ public class HomeActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         requestBluetoothPermissions();
         btSerial = new BluetoothSerial(this);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+        setupBottomNavigation(bottomNav);
+        startBluetoothListener();
 
         // Initialize BluetoothSerial
         btSerial = new BluetoothSerial(this);
@@ -99,6 +104,7 @@ public class HomeActivity extends AppCompatActivity {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
+        txtFeedAmount = findViewById(R.id.txtFeedAmount);
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
         progressTemperature = findViewById(R.id.progressTemperature);
@@ -112,27 +118,23 @@ public class HomeActivity extends AppCompatActivity {
         btnIncrease.setOnClickListener(v -> {
             if (feedAmount < FEED_MAX) feedAmount++;
             else Toast.makeText(this, "Max " + FEED_MAX + " kg", Toast.LENGTH_SHORT).show();
-            txtFeedLevel.setText(feedAmount + " kg");
+            txtFeedAmount.setText(feedAmount + " kg");
         });
 
         btnDecrease.setOnClickListener(v -> {
             if (feedAmount > FEED_MIN) feedAmount--;
             else Toast.makeText(this, "Min " + FEED_MIN + " kg", Toast.LENGTH_SHORT).show();
-            txtFeedLevel.setText(feedAmount + " kg");
+            txtFeedAmount.setText(feedAmount + " kg");
         });
 
         btnFeedNow.setOnClickListener(v -> {
             if (connectionState == ConnectionState.CONNECTED) {
-
-                String cmd = "FEED_NOW:" + feedAmount;
-
-                btSerial.send(cmd.getBytes());  // <-- send command
-
+                // send current weight measured from load cell
+                String cmd = "FEED_NOW:" + currentWeight + "\n";
+                btSerial.send(cmd.getBytes());
                 Toast.makeText(this,
-                        "Feed request sent: " + feedAmount + " kg",
-                        Toast.LENGTH_SHORT
-                ).show();
-
+                        "Feed request sent: " + currentWeight + " kg",
+                        Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "ESP32 not connected!", Toast.LENGTH_SHORT).show();
             }
@@ -165,6 +167,37 @@ public class HomeActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void startBluetoothListener() {
+        new Thread(() -> {
+            byte[] buffer = new byte[1024];
+            int bytes;
+            while (connectionState == ConnectionState.CONNECTED) {
+                try {
+                    InputStream inStream = btSerial.getInputStream(); // make sure your btSerial exposes InputStream
+                    if (inStream.available() > 0) {
+                        bytes = inStream.read(buffer);
+                        String msg = new String(buffer, 0, bytes).trim();
+
+                        // Parse CSV: TEMP,WEIGHT,SERVO,FEEDING
+                        String[] parts = msg.split(",");
+                        if (parts.length >= 2) {
+                            try {
+                                float weight = Float.parseFloat(parts[1]);
+                                currentWeight = weight;  // update global variable
+                            } catch (NumberFormatException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+        }).start();
+    }
+
+
     private void setConnectionState(ConnectionState state) {
         connectionState = state;
         txtDeviceName.setText("ESP32: " + state.name());
@@ -187,25 +220,29 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void handleBluetoothData(String received) {
-        if (received.isEmpty()) return;
+        if (received == null || received.isEmpty()) return;
 
-        // Assuming ESP32 sends: temperature,weight,servo,feedingActive
+        // Format: temperature,weight,servo,feedingActive
         String[] parts = received.split(",");
-        if (parts.length != 4) return;
+        if (parts.length < 4) {
+            Log.e("BT-DATA", "Invalid packet: " + received);
+            return;
+        }
 
         try {
             float temp = Float.parseFloat(parts[0]);
             float weight = Float.parseFloat(parts[1]);
             int servo = Integer.parseInt(parts[2]);
-            boolean feedingActive = parts[3].equals("1");
+            boolean feedingActive = parts[3].trim().equals("1");
 
+            // ----------- UPDATE UI -----------
             runOnUiThread(() -> {
                 txtTemperature.setText(temp + " °C");
                 txtFeedLevel.setText(weight + " kg");
                 txtFeedLevelStatus.setText(feedingActive ? "Feeding" : "Idle");
             });
 
-            // Upload to Firebase
+            // ----------- SAVE EVERY ENTRY TO FIREBASE -----------
             Map<String, Object> feedData = new HashMap<>();
             feedData.put("temperature", temp);
             feedData.put("weight", weight);
@@ -215,16 +252,17 @@ public class HomeActivity extends AppCompatActivity {
 
             db.collection("FeedFlow")
                     .document("Device001")
-                    .set(feedData)
-                    .addOnSuccessListener(aVoid -> Log.d("FIREBASE", "Data uploaded"))
+                    .collection("Readings")  // ← this keeps all readings
+                    .add(feedData)            // ← auto-ID, saves every entry
+                    .addOnSuccessListener(ref -> Log.d("FIREBASE", "Reading saved"))
                     .addOnFailureListener(e -> Log.e("FIREBASE", "Upload failed", e));
 
-        } catch (NumberFormatException e) {
-            Log.e("BT-DATA", "Parsing error: " + e.getMessage());
+        } catch (Exception e) {
+            Log.e("BT-DATA", "Parse error: " + e.getMessage() + " | Raw: " + received);
         }
     }
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
-        bottomNav.setSelectedItemId(R.id.nav_stats); // highlight current tab
+        bottomNav.setSelectedItemId(R.id.nav_home); // highlight current tab
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -235,7 +273,7 @@ public class HomeActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_stats) {
-                startActivity(new Intent(this, HomeActivity.class));
+                startActivity(new Intent(this, StatsActivity.class));
                 overridePendingTransition(0,0);
                 return true;
             } else if (id == R.id.nav_notes) {
