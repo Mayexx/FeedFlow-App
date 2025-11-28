@@ -6,7 +6,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,8 +27,10 @@ import java.util.Map;
 public class HomeActivity extends AppCompatActivity {
 
     private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus, txtFeedAmount;
-    private ProgressBar progressTemperature, progressFeed;
     private Button btnFeedNow, btnIncrease, btnDecrease;
+    private LinearLayout feedProgressCard;  // <-- move to class level
+    private ProgressBar progressFeed;
+
 
     private FirebaseFirestore db;
     private BluetoothSerial btSerial;
@@ -35,6 +39,7 @@ public class HomeActivity extends AppCompatActivity {
     private static final int FEED_MAX = 10;
     private static final int FEED_MIN = 1;
     private float currentWeight = 0.0f;
+
 
     private enum ConnectionState {DISCONNECTED, CONNECTING, CONNECTED}
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
@@ -45,6 +50,7 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        LinearLayout feedProgressCard = findViewById(R.id.feedProgressCard);
 
         initViews();
         db = FirebaseFirestore.getInstance();
@@ -95,14 +101,18 @@ public class HomeActivity extends AppCompatActivity {
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
 
-        progressTemperature = findViewById(R.id.progressTemperature);
+        // Assign to class-level variables, not local ones!
+        feedProgressCard = findViewById(R.id.feedProgressCard);
         progressFeed = findViewById(R.id.progressFeed);
-        progressTemperature.setMax(50);
+
+        progressFeed.setMax(FEED_MAX); // safe default
+        progressFeed.setProgress(0);
 
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
     }
+
 
     // ------------------------------------------------------------
     // Buttons
@@ -122,10 +132,60 @@ public class HomeActivity extends AppCompatActivity {
 
         btnFeedNow.setOnClickListener(v -> {
             if (connectionState == ConnectionState.CONNECTED) {
-                String cmd = "FEED_NOW:" + currentWeight + "\n";
+                String cmd = "FEED_NOW:" + feedAmount + "\n"; // send desired feed amount
                 Log.d("BT_SEND", "Sending: " + cmd);
                 btSerial.send(cmd.getBytes());
+
+                // Show progress card and reset
+                feedProgressCard.setVisibility(View.VISIBLE);
+                progressFeed.setMax(feedAmount);
+                progressFeed.setProgress(0);
+
                 Toast.makeText(this, "Feeding now…", Toast.LENGTH_SHORT).show();
+
+                // Save to Firestore feed logs
+                Map<String, Object> feedLog = new HashMap<>();
+                feedLog.put("feedAmount", feedAmount);
+                feedLog.put("timestamp", new Date());
+                feedLog.put("status", "Started");
+
+                db.collection("FeedFlow")
+                        .document("Device001")
+                        .collection("FeedLogs")
+                        .add(feedLog)
+                        .addOnSuccessListener(documentReference ->
+                                Log.d("FIRESTORE", "Feed log saved with ID: " + documentReference.getId()))
+                        .addOnFailureListener(e ->
+                                Log.e("FIRESTORE", "Error saving feed log", e));
+
+                // Optional: Simulated progress (replace with actual feed status from Bluetooth)
+                new Thread(() -> {
+                    for (int i = 1; i <= feedAmount; i++) {
+                        int progress = i;
+                        runOnUiThread(() -> progressFeed.setProgress(progress));
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // Hide progress card when done
+                    runOnUiThread(() -> feedProgressCard.setVisibility(View.GONE));
+
+                    // Update feed log status to 'Done' (optional)
+                    Map<String, Object> updateStatus = new HashMap<>();
+                    updateStatus.put("status", "Done");
+                    updateStatus.put("completedAt", new Date());
+
+                    db.collection("FeedFlow")
+                            .document("Device001")
+                            .collection("FeedLogs")
+                            .add(updateStatus)
+                            .addOnSuccessListener(doc -> Log.d("FIRESTORE", "Feed log updated to Done"))
+                            .addOnFailureListener(e -> Log.e("FIRESTORE", "Error updating feed log", e));
+                }).start();
+
             } else {
                 Toast.makeText(this, "ESP32 not connected!", Toast.LENGTH_SHORT).show();
             }
