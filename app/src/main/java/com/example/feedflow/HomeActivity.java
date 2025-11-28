@@ -33,6 +33,8 @@ public class HomeActivity extends AppCompatActivity {
     private enum ConnectionState {DISCONNECTED, CONNECTING, CONNECTED}
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
 
+    private static final String ESP32_MAC_ADDRESS = "B4:88:08:B4:03:6A"; // your ESP32 mac
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,10 +43,9 @@ public class HomeActivity extends AppCompatActivity {
         initViews();
         db = FirebaseFirestore.getInstance();
         requestBluetoothPermissions();
+
         btSerial = new BluetoothSerial(this);
 
-        // Initialize BluetoothSerial
-        btSerial = new BluetoothSerial(this);
         btSerial.setCallbacks(new BluetoothSerial.DataCallback() {
             @Override
             public void onDataReceived(byte[] rawData) {
@@ -54,42 +55,28 @@ public class HomeActivity extends AppCompatActivity {
             }
             @Override
             public void onConnectionFailed(Exception e) {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> {
+                    setConnectionState(ConnectionState.DISCONNECTED);
+                    Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show();
+                });
             }
             @Override
             public void onDisconnected() {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show()
-                );
+                runOnUiThread(() -> {
+                    setConnectionState(ConnectionState.DISCONNECTED);
+                    Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show();
+                });
             }
         });
-        setupButtons();
-        // Replace with your ESP32 MAC address
-        connectBluetoothWithRetry("B4:88:08:B4:03:6A", 3);
 
-        btSerial.setCallbacks(new BluetoothSerial.DataCallback() {
-            @Override
-            public void onDataReceived(byte[] rawData) {
-                String data = new String(rawData).trim();
-                runOnUiThread(() -> handleBluetoothData(data));
-            }
-            @Override
-            public void onConnectionFailed(Exception e) {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show()
-                );
-            }
-            @Override
-            public void onDisconnected() {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show()
-                );
-            }
-        });
-        btSerial.connect("B4:8A:0A:B4:03:6A");
+        setupButtons();
+        connectBluetoothWithRetry(ESP32_MAC_ADDRESS, 3);
+
+        // Setup bottom navigation
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
+        setupBottomNavigation(bottomNav);
     }
+
     private void initViews() {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
@@ -99,7 +86,9 @@ public class HomeActivity extends AppCompatActivity {
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
+        txtDeviceName.setText("ESP32_Test");
     }
+
     private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
             if (feedAmount < FEED_MAX) feedAmount++;
@@ -115,16 +104,28 @@ public class HomeActivity extends AppCompatActivity {
 
         btnFeedNow.setOnClickListener(v -> {
             if (connectionState == ConnectionState.CONNECTED) {
-
                 String cmd = "FEED_NOW:" + feedAmount;
-
-                btSerial.send(cmd.getBytes());  // <-- send command
+                btSerial.send((cmd + "\n").getBytes());  // send command
 
                 Toast.makeText(this,
                         "Feed request sent: " + feedAmount + " kg",
                         Toast.LENGTH_SHORT
                 ).show();
 
+                // Firestore: Save feed event
+                Map<String, Object> feedEvent = new HashMap<>();
+                feedEvent.put("amount", feedAmount);
+                feedEvent.put("timestamp", System.currentTimeMillis());
+                feedEvent.put("deviceName", txtDeviceName.getText().toString());
+                feedEvent.put("status", "sent");
+
+                db.collection("feed_events").add(feedEvent)
+                        .addOnSuccessListener(documentReference ->
+                                Toast.makeText(this, "Feed event logged!", Toast.LENGTH_SHORT).show()
+                        )
+                        .addOnFailureListener(e ->
+                                Toast.makeText(this, "Failed to log feed event!", Toast.LENGTH_SHORT).show()
+                        );
             } else {
                 Toast.makeText(this, "ESP32 not connected!", Toast.LENGTH_SHORT).show();
             }
@@ -159,7 +160,6 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setConnectionState(ConnectionState state) {
         connectionState = state;
-        txtDeviceName.setText("ESP32: " + state.name());
 
         switch (state) {
             case CONNECTED:
@@ -181,7 +181,15 @@ public class HomeActivity extends AppCompatActivity {
     private void handleBluetoothData(String received) {
         if (received.isEmpty()) return;
 
-        // Assuming ESP32 sends: temperature,weight,servo,feedingActive
+        // Handle ESP32 status lines, e.g. FEEDING_STARTED, FEEDING_DONE etc.
+        if (!received.contains(",")) {
+            // Show status, not telemetry
+            Toast.makeText(this, received, Toast.LENGTH_SHORT).show();
+            txtFeedLevelStatus.setText(received); // e.g. "FEEDING_DONE"
+            return;
+        }
+
+        // Basic telemetry: temperature,weight,servo,feedingActive
         String[] parts = received.split(",");
         if (parts.length != 4) return;
 
@@ -191,13 +199,11 @@ public class HomeActivity extends AppCompatActivity {
             int servo = Integer.parseInt(parts[2]);
             boolean feedingActive = parts[3].equals("1");
 
-            runOnUiThread(() -> {
-                txtTemperature.setText(temp + " °C");
-                txtFeedLevel.setText(weight + " kg");
-                txtFeedLevelStatus.setText(feedingActive ? "Feeding" : "Idle");
-            });
+            txtTemperature.setText(temp + " °C");
+            txtFeedLevel.setText(weight + " kg");
+            txtFeedLevelStatus.setText(feedingActive ? "Feeding" : "Idle");
 
-            // Upload to Firebase
+            // Firestore telemetry
             Map<String, Object> feedData = new HashMap<>();
             feedData.put("temperature", temp);
             feedData.put("weight", weight);
@@ -205,18 +211,19 @@ public class HomeActivity extends AppCompatActivity {
             feedData.put("feedingActive", feedingActive);
             feedData.put("timestamp", new Date());
 
+            // Use a per-event document for history; alternatively, you can use:
             db.collection("FeedFlow")
-                    .document("Device001")
-                    .set(feedData)
-                    .addOnSuccessListener(aVoid -> Log.d("FIREBASE", "Data uploaded"))
+                    .add(feedData)
+                    .addOnSuccessListener(aVoid -> Log.d("FIREBASE", "Telemetry uploaded"))
                     .addOnFailureListener(e -> Log.e("FIREBASE", "Upload failed", e));
 
         } catch (NumberFormatException e) {
             Log.e("BT-DATA", "Parsing error: " + e.getMessage());
         }
     }
+
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
-        bottomNav.setSelectedItemId(R.id.nav_stats); // highlight current tab
+        bottomNav.setSelectedItemId(R.id.nav_home); // highlight current tab
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();

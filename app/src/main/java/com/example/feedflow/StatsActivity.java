@@ -87,7 +87,7 @@ public class StatsActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_stats) {
-                return true; // already here
+                return true;
             } else if (id == R.id.nav_notes) {
                 startActivity(new Intent(this, NotesActivity.class));
                 overridePendingTransition(0,0);
