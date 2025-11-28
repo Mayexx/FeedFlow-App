@@ -2,7 +2,6 @@ package com.example.feedflow;
 
 import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,10 +18,11 @@ import java.util.Map;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus;
+    private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus, txtFeedAmount;
     private Button btnFeedNow, btnIncrease, btnDecrease;
-
+    private final Map<String, String> pendingFeedEvents = new HashMap<>();
     private FirebaseFirestore db;
+    private float currentWeight = 0f;
 
     private BluetoothSerial btSerial;
 
@@ -48,11 +48,11 @@ public class HomeActivity extends AppCompatActivity {
 
         btSerial.setCallbacks(new BluetoothSerial.DataCallback() {
             @Override
-            public void onDataReceived(byte[] rawData) {
-                String data = new String(rawData).trim();
+            public void onDataReceived(String data) {
                 Log.d("BT_RAW", "Received: '" + data + "'");
                 runOnUiThread(() -> handleBluetoothData(data));
             }
+
             @Override
             public void onConnectionFailed(Exception e) {
                 runOnUiThread(() -> {
@@ -60,6 +60,7 @@ public class HomeActivity extends AppCompatActivity {
                     Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show();
                 });
             }
+
             @Override
             public void onDisconnected() {
                 runOnUiThread(() -> {
@@ -69,6 +70,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
+
         setupButtons();
         connectBluetoothWithRetry(ESP32_MAC_ADDRESS, 3);
 
@@ -76,10 +78,10 @@ public class HomeActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
         setupBottomNavigation(bottomNav);
     }
-
     private void initViews() {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
+        txtFeedAmount = findViewById(R.id.txtFeedAmount);
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
@@ -88,50 +90,70 @@ public class HomeActivity extends AppCompatActivity {
         btnDecrease = findViewById(R.id.btnDecrease);
         txtDeviceName.setText("ESP32_Test");
     }
-
     private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
             if (feedAmount < FEED_MAX) feedAmount++;
             else Toast.makeText(this, "Max " + FEED_MAX + " kg", Toast.LENGTH_SHORT).show();
-            txtFeedLevel.setText(feedAmount + " kg");
+            txtFeedAmount.setText(feedAmount + " kg");
         });
 
         btnDecrease.setOnClickListener(v -> {
             if (feedAmount > FEED_MIN) feedAmount--;
             else Toast.makeText(this, "Min " + FEED_MIN + " kg", Toast.LENGTH_SHORT).show();
-            txtFeedLevel.setText(feedAmount + " kg");
+            txtFeedAmount.setText(feedAmount + " kg");
         });
 
         btnFeedNow.setOnClickListener(v -> {
-            if (connectionState == ConnectionState.CONNECTED) {
-                String cmd = "FEED_NOW:" + feedAmount;
-                btSerial.send((cmd + "\n").getBytes());  // send command
-
-                Toast.makeText(this,
-                        "Feed request sent: " + feedAmount + " kg",
-                        Toast.LENGTH_SHORT
-                ).show();
-
-                // Firestore: Save feed event
-                Map<String, Object> feedEvent = new HashMap<>();
-                feedEvent.put("amount", feedAmount);
-                feedEvent.put("timestamp", System.currentTimeMillis());
-                feedEvent.put("deviceName", txtDeviceName.getText().toString());
-                feedEvent.put("status", "sent");
-
-                db.collection("feed_events").add(feedEvent)
-                        .addOnSuccessListener(documentReference ->
-                                Toast.makeText(this, "Feed event logged!", Toast.LENGTH_SHORT).show()
-                        )
-                        .addOnFailureListener(e ->
-                                Toast.makeText(this, "Failed to log feed event!", Toast.LENGTH_SHORT).show()
-                        );
-            } else {
+            if (connectionState != ConnectionState.CONNECTED) {
                 Toast.makeText(this, "ESP32 not connected!", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
-    }
 
+            // ❗ Prevent feeding if THERE IS NO WEIGHT
+            if (currentWeight <= 0.0f) {
+                Toast.makeText(this, "No weight detected! Check load cell.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Prevent invalid feed amount
+            if (feedAmount <= 0) {
+                Toast.makeText(this, "Enter a valid feed amount!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String cmd = "FEED_NOW:" + feedAmount + "\n";
+
+            btnFeedNow.setEnabled(false);
+
+            try {
+                btSerial.send(cmd);   // <-- FIXED: now always send a string
+                Toast.makeText(this, "Feed request sent: " + feedAmount + " kg", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(this, "Failed to send feed command!", Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+                return;
+            }
+
+            // Log feed event in Firestore and store doc ID
+            Map<String, Object> feedEvent = new HashMap<>();
+            feedEvent.put("amount", feedAmount);
+            feedEvent.put("timestamp", System.currentTimeMillis());
+            feedEvent.put("deviceName", txtDeviceName.getText().toString());
+            feedEvent.put("status", "sent"); // initial status
+
+            db.collection("FeedFlow")
+                    .document("Device001")
+                    .collection("FeedLogs")
+                    .add(feedEvent)
+                    .addOnSuccessListener(docRef -> {
+                        Log.d("FEED_EVENT", "Feed event logged!");
+                        // Keep track of this pending event
+                        pendingFeedEvents.put("FEED_NOW", docRef.getId());
+                    })
+                    .addOnFailureListener(e -> Log.e("FEED_EVENT", "Failed to log feed event", e));
+        });
+
+    }
     private void requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ActivityCompat.requestPermissions(this,
@@ -139,7 +161,6 @@ public class HomeActivity extends AppCompatActivity {
                     101);
         }
     }
-
     private void connectBluetoothWithRetry(String macAddress, int retries) {
         setConnectionState(ConnectionState.CONNECTING);
 
@@ -181,15 +202,36 @@ public class HomeActivity extends AppCompatActivity {
     private void handleBluetoothData(String received) {
         if (received.isEmpty()) return;
 
-        // Handle ESP32 status lines, e.g. FEEDING_STARTED, FEEDING_DONE etc.
+        // Handle status lines like FEEDING_STARTED, FEEDING_DONE
         if (!received.contains(",")) {
-            // Show status, not telemetry
             Toast.makeText(this, received, Toast.LENGTH_SHORT).show();
-            txtFeedLevelStatus.setText(received); // e.g. "FEEDING_DONE"
+            txtFeedLevelStatus.setText(received);
+
+            // Re-enable feed button when feeding finishes
+            if (received.equals("FEEDING_DONE") || received.equals("FEED_TIMEOUT")) {
+                btnFeedNow.setEnabled(true);
+            }
+
+            if (pendingFeedEvents.containsKey("FEED_NOW")) {
+                String docId = pendingFeedEvents.get("FEED_NOW");
+
+                // Update Firestore doc status to received status
+                db.collection("FeedFlow")
+                        .document("Device001")
+                        .collection("FeedLogs")
+                        .document(docId)
+                        .update("status", received)  // e.g., FEEDING_STARTED or FEEDING_DONE
+                        .addOnSuccessListener(aVoid -> Log.d("FEED_EVENT", "Feed event updated: " + received))
+                        .addOnFailureListener(e -> Log.e("FEED_EVENT", "Failed to update feed event", e));
+
+                // Remove from pending map
+                pendingFeedEvents.remove("FEED_NOW");
+            }
+
             return;
         }
 
-        // Basic telemetry: temperature,weight,servo,feedingActive
+        // Normal telemetry: temperature, weight, servo, feedingActive
         String[] parts = received.split(",");
         if (parts.length != 4) return;
 
@@ -199,9 +241,13 @@ public class HomeActivity extends AppCompatActivity {
             int servo = Integer.parseInt(parts[2]);
             boolean feedingActive = parts[3].equals("1");
 
+            // Update UI
             txtTemperature.setText(temp + " °C");
             txtFeedLevel.setText(weight + " kg");
             txtFeedLevelStatus.setText(feedingActive ? "Feeding" : "Idle");
+
+            // Update current weight for feed validation
+            currentWeight = weight;
 
             // Firestore telemetry
             Map<String, Object> feedData = new HashMap<>();
@@ -211,8 +257,9 @@ public class HomeActivity extends AppCompatActivity {
             feedData.put("feedingActive", feedingActive);
             feedData.put("timestamp", new Date());
 
-            // Use a per-event document for history; alternatively, you can use:
             db.collection("FeedFlow")
+                    .document("Device001")
+                    .collection("Readings")
                     .add(feedData)
                     .addOnSuccessListener(aVoid -> Log.d("FIREBASE", "Telemetry uploaded"))
                     .addOnFailureListener(e -> Log.e("FIREBASE", "Upload failed", e));
@@ -221,6 +268,9 @@ public class HomeActivity extends AppCompatActivity {
             Log.e("BT-DATA", "Parsing error: " + e.getMessage());
         }
     }
+
+
+
 
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
         bottomNav.setSelectedItemId(R.id.nav_home); // highlight current tab
