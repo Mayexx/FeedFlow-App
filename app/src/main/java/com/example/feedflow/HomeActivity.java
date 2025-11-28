@@ -7,16 +7,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.firestore.FirebaseFirestore;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +20,6 @@ import java.util.Map;
 public class HomeActivity extends AppCompatActivity {
 
     private TextView txtTemperature, txtFeedLevel, txtFeedLevelStatus, txtDeviceName, txtBtStatus;
-    private ProgressBar progressTemperature, progressFeed;
     private Button btnFeedNow, btnIncrease, btnDecrease;
 
     private FirebaseFirestore db;
@@ -101,9 +96,6 @@ public class HomeActivity extends AppCompatActivity {
         txtFeedLevelStatus = findViewById(R.id.txtFeedLevelStatus);
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
-        progressTemperature = findViewById(R.id.progressTemperature);
-        progressFeed = findViewById(R.id.progressFeed);
-        progressTemperature.setMax(50);
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
@@ -235,7 +227,7 @@ public class HomeActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_stats) {
-                startActivity(new Intent(this, HomeActivity.class));
+                startActivity(new Intent(this, StatsActivity.class));
                 overridePendingTransition(0,0);
                 return true;
             } else if (id == R.id.nav_notes) {
