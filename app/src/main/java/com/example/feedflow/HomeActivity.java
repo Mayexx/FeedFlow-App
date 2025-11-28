@@ -29,7 +29,6 @@ public class HomeActivity extends AppCompatActivity {
     private Button btnFeedNow, btnIncrease, btnDecrease;
 
     private FirebaseFirestore db;
-
     private BluetoothSerial btSerial;
 
     private int feedAmount = 5;
@@ -40,6 +39,8 @@ public class HomeActivity extends AppCompatActivity {
     private enum ConnectionState {DISCONNECTED, CONNECTING, CONNECTED}
     private ConnectionState connectionState = ConnectionState.DISCONNECTED;
 
+    private final String ESP_MAC = "B4:88:08:B4:03:6A";  // ← Only ONE MAC address
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,58 +49,44 @@ public class HomeActivity extends AppCompatActivity {
         initViews();
         db = FirebaseFirestore.getInstance();
         requestBluetoothPermissions();
-        btSerial = new BluetoothSerial(this);
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNavigation);
-        setupBottomNavigation(bottomNav);
-        startBluetoothListener();
 
-        // Initialize BluetoothSerial
+        // ------------------- Initialize Bluetooth -------------------
         btSerial = new BluetoothSerial(this);
+
+        // Callbacks (only ONCE)
         btSerial.setCallbacks(new BluetoothSerial.DataCallback() {
             @Override
             public void onDataReceived(byte[] rawData) {
                 String data = new String(rawData).trim();
-                Log.d("BT_RAW", "Received: '" + data + "'");
-                runOnUiThread(() -> handleBluetoothData(data));
+                Log.d("BT_RAW", "Received: " + data);
+                handleBluetoothData(data);
             }
+
             @Override
             public void onConnectionFailed(Exception e) {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show()
-                );
+                Log.e("BT_CONNECT", "Failed: " + e.getMessage());
+                Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show();
+                setConnectionState(ConnectionState.DISCONNECTED);
             }
+
             @Override
             public void onDisconnected() {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show()
-                );
+                Log.w("BT_CONNECT", "Disconnected");
+                Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show();
+                setConnectionState(ConnectionState.DISCONNECTED);
             }
         });
+
         setupButtons();
-        // Replace with your ESP32 MAC address
-        connectBluetoothWithRetry("B4:88:08:B4:03:6A", 3);
+        setupBottomNavigation(findViewById(R.id.bottomNavigation));
 
-        btSerial.setCallbacks(new BluetoothSerial.DataCallback() {
-            @Override
-            public void onDataReceived(byte[] rawData) {
-                String data = new String(rawData).trim();
-                runOnUiThread(() -> handleBluetoothData(data));
-            }
-            @Override
-            public void onConnectionFailed(Exception e) {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Failed", Toast.LENGTH_SHORT).show()
-                );
-            }
-            @Override
-            public void onDisconnected() {
-                runOnUiThread(() ->
-                        Toast.makeText(HomeActivity.this, "Bluetooth Disconnected", Toast.LENGTH_SHORT).show()
-                );
-            }
-        });
-        btSerial.connect("B4:8A:0A:B4:03:6A");
+        // ------------------- Start Connection -------------------
+        connectBluetoothWithRetry(ESP_MAC, 3);
     }
+
+    // ------------------------------------------------------------
+    // Initialize UI
+    // ------------------------------------------------------------
     private void initViews() {
         txtTemperature = findViewById(R.id.txtTemperature);
         txtFeedLevel = findViewById(R.id.txtFeedLevel);
@@ -107,13 +94,19 @@ public class HomeActivity extends AppCompatActivity {
         txtFeedAmount = findViewById(R.id.txtFeedAmount);
         txtDeviceName = findViewById(R.id.txtDeviceName);
         txtBtStatus = findViewById(R.id.txtBtStatus);
+
         progressTemperature = findViewById(R.id.progressTemperature);
         progressFeed = findViewById(R.id.progressFeed);
         progressTemperature.setMax(50);
+
         btnFeedNow = findViewById(R.id.btnFeedNow);
         btnIncrease = findViewById(R.id.btnIncrease);
         btnDecrease = findViewById(R.id.btnDecrease);
     }
+
+    // ------------------------------------------------------------
+    // Buttons
+    // ------------------------------------------------------------
     private void setupButtons() {
         btnIncrease.setOnClickListener(v -> {
             if (feedAmount < FEED_MAX) feedAmount++;
@@ -129,18 +122,19 @@ public class HomeActivity extends AppCompatActivity {
 
         btnFeedNow.setOnClickListener(v -> {
             if (connectionState == ConnectionState.CONNECTED) {
-                // send current weight measured from load cell
                 String cmd = "FEED_NOW:" + currentWeight + "\n";
+                Log.d("BT_SEND", "Sending: " + cmd);
                 btSerial.send(cmd.getBytes());
-                Toast.makeText(this,
-                        "Feed request sent: " + currentWeight + " kg",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Feeding now…", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "ESP32 not connected!", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
+    // ------------------------------------------------------------
+    // Bluetooth Permissions
+    // ------------------------------------------------------------
     private void requestBluetoothPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ActivityCompat.requestPermissions(this,
@@ -149,55 +143,65 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    private void connectBluetoothWithRetry(String macAddress, int retries) {
+    // ------------------------------------------------------------
+    // Connection
+    // ------------------------------------------------------------
+    private void connectBluetoothWithRetry(String mac, int retries) {
         setConnectionState(ConnectionState.CONNECTING);
 
         new Thread(() -> {
             for (int i = 0; i < retries; i++) {
                 try {
-                    btSerial.connect(macAddress);
-                    runOnUiThread(() -> setConnectionState(ConnectionState.CONNECTED));
+                    Log.d("BT_CONNECT", "Connecting to " + mac + " (Attempt " + (i + 1) + ")");
+                    btSerial.connect(mac);
+
+                    runOnUiThread(() -> {
+                        Log.d("BT_CONNECT", "Connected!");
+                        setConnectionState(ConnectionState.CONNECTED);
+                    });
+
+                    startBluetoothListener();
                     return;
+
                 } catch (Exception e) {
-                    Log.e("BT-CONNECT", "Attempt " + (i + 1) + " failed: " + e.getMessage());
+                    Log.e("BT_CONNECT", "Attempt " + (i + 1) + " failed: " + e.getMessage());
                     try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
                 }
             }
-            runOnUiThread(() -> setConnectionState(ConnectionState.DISCONNECTED));
+
+            runOnUiThread(() -> {
+                Log.e("BT_CONNECT", "All retries failed.");
+                setConnectionState(ConnectionState.DISCONNECTED);
+            });
         }).start();
     }
 
+    // ------------------------------------------------------------
+    // Listen for Bytes
+    // ------------------------------------------------------------
     private void startBluetoothListener() {
         new Thread(() -> {
-            byte[] buffer = new byte[1024];
-            int bytes;
-            while (connectionState == ConnectionState.CONNECTED) {
-                try {
-                    InputStream inStream = btSerial.getInputStream(); // make sure your btSerial exposes InputStream
-                    if (inStream.available() > 0) {
-                        bytes = inStream.read(buffer);
-                        String msg = new String(buffer, 0, bytes).trim();
+            try {
+                InputStream in = btSerial.getInputStream();
+                byte[] buffer = new byte[256];
 
-                        // Parse CSV: TEMP,WEIGHT,SERVO,FEEDING
-                        String[] parts = msg.split(",");
-                        if (parts.length >= 2) {
-                            try {
-                                float weight = Float.parseFloat(parts[1]);
-                                currentWeight = weight;  // update global variable
-                            } catch (NumberFormatException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                while (connectionState == ConnectionState.CONNECTED) {
+                    if (in.available() > 0) {
+                        int len = in.read(buffer);
+                        String msg = new String(buffer, 0, len).trim();
+                        Log.d("BT_STREAM", "Stream Data: " + msg);
+                        handleBluetoothData(msg);
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    break;
                 }
+            } catch (Exception e) {
+                Log.e("BT_STREAM", "Listener error: " + e.getMessage());
             }
         }).start();
     }
 
-
+    // ------------------------------------------------------------
+    // Update connection state UI
+    // ------------------------------------------------------------
     private void setConnectionState(ConnectionState state) {
         connectionState = state;
         txtDeviceName.setText("ESP32: " + state.name());
@@ -212,81 +216,91 @@ public class HomeActivity extends AppCompatActivity {
                 txtBtStatus.setTextColor(getResources().getColor(android.R.color.holo_orange_dark));
                 break;
             case DISCONNECTED:
-            default:
                 txtBtStatus.setText("Disconnected");
                 txtBtStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                 break;
         }
     }
 
+    // ------------------------------------------------------------
+    // Process incoming Bluetooth Data
+    // ------------------------------------------------------------
     private void handleBluetoothData(String received) {
         if (received == null || received.isEmpty()) return;
 
-        // Format: temperature,weight,servo,feedingActive
-        String[] parts = received.split(",");
-        if (parts.length < 4) {
-            Log.e("BT-DATA", "Invalid packet: " + received);
+        Log.d("BT_PARSE", "Raw packet: " + received);
+
+        String[] p = received.split(",");
+
+        if (p.length < 4) {
+            Log.e("BT_PARSE", "Invalid data: " + received);
             return;
         }
 
         try {
-            float temp = Float.parseFloat(parts[0]);
-            float weight = Float.parseFloat(parts[1]);
-            int servo = Integer.parseInt(parts[2]);
-            boolean feedingActive = parts[3].trim().equals("1");
+            float temp = Float.parseFloat(p[0]);
+            float weight = Float.parseFloat(p[1]);
+            int servo = Integer.parseInt(p[2]);
+            boolean feeding = p[3].equals("1");
 
-            // ----------- UPDATE UI -----------
+            currentWeight = weight;
+
+            // UI Update
             runOnUiThread(() -> {
                 txtTemperature.setText(temp + " °C");
                 txtFeedLevel.setText(weight + " kg");
-                txtFeedLevelStatus.setText(feedingActive ? "Feeding" : "Idle");
+                txtFeedLevelStatus.setText(feeding ? "Feeding…" : "Idle");
             });
 
-            // ----------- SAVE EVERY ENTRY TO FIREBASE -----------
-            Map<String, Object> feedData = new HashMap<>();
-            feedData.put("temperature", temp);
-            feedData.put("weight", weight);
-            feedData.put("servo", servo);
-            feedData.put("feedingActive", feedingActive);
-            feedData.put("timestamp", new Date());
+            // Firebase Save
+            Map<String, Object> data = new HashMap<>();
+            data.put("temperature", temp);
+            data.put("weight", weight);
+            data.put("servo", servo);
+            data.put("feedingActive", feeding);
+            data.put("timestamp", new Date());
 
             db.collection("FeedFlow")
                     .document("Device001")
-                    .collection("Readings")  // ← this keeps all readings
-                    .add(feedData)            // ← auto-ID, saves every entry
-                    .addOnSuccessListener(ref -> Log.d("FIREBASE", "Reading saved"))
-                    .addOnFailureListener(e -> Log.e("FIREBASE", "Upload failed", e));
+                    .collection("Readings")
+                    .add(data)
+                    .addOnSuccessListener(r -> Log.d("FIREBASE", "Saved"))
+                    .addOnFailureListener(e -> Log.e("FIREBASE", "Error: " + e));
 
         } catch (Exception e) {
-            Log.e("BT-DATA", "Parse error: " + e.getMessage() + " | Raw: " + received);
+            Log.e("BT_PARSE", "Error: " + e.getMessage());
         }
     }
+
+    // ------------------------------------------------------------
+    // Navigation
+    // ------------------------------------------------------------
     private void setupBottomNavigation(BottomNavigationView bottomNav) {
-        bottomNav.setSelectedItemId(R.id.nav_home); // highlight current tab
+        bottomNav.setSelectedItemId(R.id.nav_home);
 
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.nav_home) {
-                startActivity(new Intent(this, HomeActivity.class));
-                overridePendingTransition(0,0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_stats) {
+            if (id == R.id.nav_home) return true;
+
+            if (id == R.id.nav_stats) {
                 startActivity(new Intent(this, StatsActivity.class));
-                overridePendingTransition(0,0);
-                return true;
-            } else if (id == R.id.nav_notes) {
-                startActivity(new Intent(this, NotesActivity.class));
-                overridePendingTransition(0,0);
-                finish();
-                return true;
-            } else if (id == R.id.nav_alerts) {
-                startActivity(new Intent(this, AlertsActivity.class));
-                overridePendingTransition(0,0);
                 finish();
                 return true;
             }
+
+            if (id == R.id.nav_notes) {
+                startActivity(new Intent(this, NotesActivity.class));
+                finish();
+                return true;
+            }
+
+            if (id == R.id.nav_alerts) {
+                startActivity(new Intent(this, AlertsActivity.class));
+                finish();
+                return true;
+            }
+
             return false;
         });
     }

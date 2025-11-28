@@ -163,7 +163,7 @@ public class AlertsActivity extends AppCompatActivity {
         );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_alerts) // replace with your icon
+                .setSmallIcon(R.drawable.logo) // replace with your icon
                 .setContentTitle(title)
                 .setContentText(message)
                 .setAutoCancel(true)
